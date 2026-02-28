@@ -293,16 +293,20 @@ export default function AlphabetSoup() {
           border-radius: 4px;
         }
 
-        /* Desktop: top tab bar visible, bottom nav hidden, normal padding */
-        .desktop-tabs { display: block; }
-        .mobile-bottom-nav { display: none; }
-        .main-content { padding: 40px 32px; }
+        /* Default: assume mobile — bottom nav, compact padding */
+        .desktop-tabs { display: none; }
+        .mobile-bottom-nav { display: flex; }
+        .main-content { padding: 24px 16px 90px; }
 
-        /* Mobile: hide top tabs, show bottom nav, add bottom padding */
+        /* Desktop: wide screen AND fine pointer (mouse) = top tabs */
+        @media (min-width: 1024px) and (pointer: fine) {
+          .desktop-tabs { display: block; }
+          .mobile-bottom-nav { display: none; }
+          .main-content { padding: 40px 32px; }
+        }
+
+        /* Tighten cards on narrow screens regardless */
         @media (max-width: 640px) {
-          .desktop-tabs { display: none; }
-          .mobile-bottom-nav { display: flex; }
-          .main-content { padding: 24px 16px 90px; }
           .char-grid { padding: 16px; gap: 6px; }
           .char-card { min-width: 62px; padding: 8px; }
         }
