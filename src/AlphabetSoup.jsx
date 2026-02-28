@@ -582,7 +582,7 @@ export default function AlphabetSoup() {
                   </div>
                   {Object.keys(customWords).length === 0 ? (
                     <div style={{ color: p.textGhost, fontSize: "13px", letterSpacing: "1px", padding: "12px 0" }}>
-                      No custom words yet. Add one on the left.
+                      No custom words yet. Add one {isWide ? "on the left" : "above"}.
                     </div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
