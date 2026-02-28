@@ -275,50 +275,55 @@ export default function AlphabetSoup() {
           transition: "background 0.25s, border-color 0.25s", flexShrink: 0,
         }}>
           <div style={{
-            maxWidth: "1200px", margin: "0 auto", padding: "0 32px",
+            maxWidth: "1200px", margin: "0 auto",
+            padding: isWide ? "0 32px" : "0 16px",
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            height: "72px",
+            height: "64px", gap: "12px",
           }}>
             {/* Logo + title */}
-            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-              <img
-                src="/Hearne_Technologies_N1_Logo.png"
-                alt="Hearne Technologies"
-                style={{ height: "36px", filter: p.logoFilter, transition: "filter 0.25s" }}
-              />
-              <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
+              {isWide && (
+                <img
+                  src="/Hearne_Technologies_N1_Logo.png"
+                  alt="Hearne Technologies"
+                  style={{ height: "36px", filter: p.logoFilter, transition: "filter 0.25s", flexShrink: 0 }}
+                />
+              )}
+              <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: "22px", fontWeight: "800", letterSpacing: "-0.5px",
+                  fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px",
                   background: gradientText,
                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  whiteSpace: "nowrap",
                 }}>AlphabetSoup</div>
-                <div style={{ fontSize: "10px", color: p.textFaint, letterSpacing: "3px", textTransform: "uppercase" }}>
+                <div style={{ fontSize: "10px", color: p.textFaint, letterSpacing: "3px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                   by Hearne Technologies
                 </div>
               </div>
             </div>
 
-            {/* Spice toggle */}
+            {/* Spice toggle — full label on desktop, compact on mobile */}
             <div
               onClick={() => setSuppressCustom(!suppressCustom)}
               style={{
-                display: "flex", alignItems: "center", gap: "10px",
-                padding: "8px 14px", borderRadius: "8px", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: "8px", flexShrink: 0,
+                padding: isWide ? "8px 14px" : "8px 10px",
+                borderRadius: "8px", cursor: "pointer",
                 background: suppressCustom ? p.bgSecondary : `${activeColors.custom}18`,
                 border: `1px solid ${suppressCustom ? p.borderMid : activeColors.custom + "55"}`,
                 transition: "all 0.3s",
               }}
             >
               <span style={{ fontSize: "15px", lineHeight: 1 }}>{suppressCustom ? "🧂" : "🌶️"}</span>
-              <div style={{ display: "flex", flexDirection: "column" }}>
+              {isWide && (
                 <span style={{
                   fontSize: "10px", letterSpacing: "1.5px", textTransform: "uppercase",
                   color: suppressCustom ? p.textFaint : activeColors.custom,
-                  transition: "color 0.2s",
+                  transition: "color 0.2s", whiteSpace: "nowrap",
                 }}>
                   {suppressCustom ? "NATO Only" : "Spice Active"}
                 </span>
-              </div>
+              )}
               <div onClick={(e) => e.stopPropagation()} style={{ pointerEvents: "none" }}>
                 <TogglePill
                   on={!suppressCustom}
