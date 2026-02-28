@@ -83,6 +83,20 @@ function parseString(input, customWords, suppressCustom) {
   });
 }
 
+function useIsTouch() {
+  const [isTouch, setIsTouch] = useState(() => {
+    // Check on first render — true if device has touch AND no reliable mouse
+    return window.matchMedia("(any-pointer: coarse)").matches;
+  });
+  useEffect(() => {
+    const mq = window.matchMedia("(any-pointer: coarse)");
+    const h = (e) => setIsTouch(e.matches);
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, []);
+  return isTouch;
+}
+
 function useSystemDark() {
   const mq = typeof window !== "undefined"
     ? window.matchMedia("(prefers-color-scheme: dark)") : null;
@@ -188,6 +202,7 @@ function ThemeSelector({ value, onChange, accentColor, p }) {
 
 export default function AlphabetSoup() {
   const systemDark = useSystemDark();
+  const isTouch     = useIsTouch();
 
   const [themePreference, setThemePreference] = usePersisted("as_theme",       "system");
   const [font,            setFont]            = usePersisted("as_font",         FONTS[0].value);
@@ -293,18 +308,6 @@ export default function AlphabetSoup() {
           border-radius: 4px;
         }
 
-        /* Default: assume mobile — bottom nav, compact padding */
-        .desktop-tabs { display: none; }
-        .mobile-bottom-nav { display: flex; }
-        .main-content { padding: 24px 16px 90px; }
-
-        /* Desktop: wide + hover-capable (mouse) = top tabs only */
-        @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
-          .desktop-tabs { display: block; }
-          .mobile-bottom-nav { display: none; }
-          .main-content { padding: 40px 32px; }
-        }
-
         /* Tighten cards on narrow screens regardless */
         @media (max-width: 640px) {
           .char-grid { padding: 16px; gap: 6px; }
@@ -404,7 +407,7 @@ export default function AlphabetSoup() {
         </header>
 
         {/* ── TABS (desktop — top bar) ── */}
-        <div className="desktop-tabs" style={{
+        <div style={{ display: isTouch ? "none" : "block", 
           borderBottom: `1px solid ${p.border}`,
           transition: "border-color 0.25s",
         }}>
@@ -447,11 +450,12 @@ export default function AlphabetSoup() {
         </div>
 
         {/* ── CONTENT ── centered, max-width, responsive padding */}
-        <div className="main-content" style={{
+        <div style={{
           flex: 1,
           maxWidth: "1200px",
           width: "100%",
           margin: "0 auto",
+          padding: isTouch ? "24px 16px 90px" : "40px 32px",
         }}>
 
           {/* ══ PARSE TAB ══ */}
@@ -988,7 +992,8 @@ export default function AlphabetSoup() {
         </div>
       </div>
       {/* ── MOBILE BOTTOM NAV ── */}
-      <nav className="mobile-bottom-nav" style={{
+      <nav style={{
+        display: isTouch ? "flex" : "none",
         position: "fixed",
         bottom: 0, left: 0, right: 0,
         background: isDark
