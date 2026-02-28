@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#60a5fa" />
+      <stop offset="33%"  stop-color="#fb923c" />
+      <stop offset="66%"  stop-color="#a78bfa" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+    <linearGradient id="bggrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0a0a0f" />
+      <stop offset="100%" stop-color="#0f0f1a" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="32" height="32" rx="7" ry="7" fill="url(#bggrad)" />
+
+  <!-- Subtle border -->
+  <rect width="32" height="32" rx="7" ry="7" fill="none" stroke="url(#grad)" stroke-width="1" opacity="0.4" />
+
+  <!-- A - left character -->
+  <text
+    x="5"
+    y="23"
+    font-family="'JetBrains Mono', 'Courier New', monospace"
+    font-size="16"
+    font-weight="800"
+    fill="url(#grad)"
+    letter-spacing="-1"
+  >AS</text>
+</svg>
