@@ -63,11 +63,19 @@ const LIGHT = {
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// customWords shape: { A: ["Alpha", "Archer"], M: ["Mancy"] }
 function parseString(input, customWords, suppressCustom) {
   return input.split("").map((char) => {
     const upper = char.toUpperCase();
-    if (!suppressCustom && customWords[upper])
-      return { char, word: customWords[upper], type: "custom", natoFallback: NATO[upper] || null };
+    if (!suppressCustom && customWords[upper]) {
+      const words = customWords[upper];
+      const word  = words.length > 1 ? pickRandom(words) : words[0];
+      return { char, word, type: "custom", natoFallback: NATO[upper] || null, wordCount: words.length };
+    }
     if (NATO[upper])        return { char, word: NATO[upper],        type: "nato"   };
     if (NUMBER_WORDS[char]) return { char, word: NUMBER_WORDS[char], type: "number" };
     if (SYMBOL_NAMES[char]) return { char, word: SYMBOL_NAMES[char], type: "symbol" };
@@ -232,11 +240,23 @@ export default function AlphabetSoup() {
     if (!newLetter.trim() || !newWord.trim()) return;
     const letter = newLetter.toUpperCase().trim().slice(0, 1);
     if (!/[A-Z]/.test(letter)) return;
-    setCustomWords((prev) => ({ ...prev, [letter]: newWord.trim() }));
-    setNewLetter(""); setNewWord("");
+    const word = newWord.trim();
+    setCustomWords((prev) => {
+      const existing = prev[letter] || [];
+      if (existing.includes(word)) return prev; // no duplicates
+      return { ...prev, [letter]: [...existing, word] };
+    });
+    setNewWord(""); // keep letter so user can quickly add more words for same letter
   };
-  const removeCustomWord = (letter) =>
-    setCustomWords((prev) => { const n = { ...prev }; delete n[letter]; return n; });
+  // Remove a single word; if last word for that letter, remove the letter entry entirely
+  const removeCustomWord = (letter, word) =>
+    setCustomWords((prev) => {
+      const remaining = (prev[letter] || []).filter((w) => w !== word);
+      if (remaining.length === 0) {
+        const n = { ...prev }; delete n[letter]; return n;
+      }
+      return { ...prev, [letter]: remaining };
+    });
 
   const gradientText = `linear-gradient(135deg, ${activeColors.nato}, ${activeColors.number}, ${activeColors.symbol}, ${activeColors.custom})`;
 
@@ -489,6 +509,9 @@ export default function AlphabetSoup() {
                         {token.type === "custom" && token.natoFallback && (
                           <span style={{ fontSize: "9px", color: p.textGhost }}>/{token.natoFallback}/</span>
                         )}
+                        {token.type === "custom" && token.wordCount > 1 && (
+                          <span style={{ fontSize: "9px", color: activeColors.custom, opacity: 0.5 }}>🎲</span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -528,8 +551,9 @@ export default function AlphabetSoup() {
               <p style={{ color: p.textMuted, fontSize: "13px", lineHeight: "1.8", margin: 0 }}>
                 Override any letter's NATO word with your own.{" "}
                 <span style={{ color: activeColors.custom }}>Custom words</span> render in their own
-                color so you always know what's spicy. The NATO fallback appears quietly on each card.
-                Use the 🌶️ toggle in the header to suppress all custom words on the fly without losing your config.
+                color so you always know what's spicy. Add multiple words for the same letter and
+                the parser will pick one at random each time. The NATO fallback appears quietly on each card.
+                Use the 🌶️ toggle in the header to suppress all custom words on the fly.
                 <br /><br />
                 <span style={{ color: p.textFaint, fontSize: "11px" }}>
                   ✦ Your custom words are saved automatically in your browser.
@@ -543,17 +567,19 @@ export default function AlphabetSoup() {
                     value={newLetter}
                     onChange={(e) => setNewLetter(e.target.value.toUpperCase().slice(0, 1))}
                     onKeyDown={(e) => e.key === "Enter" && addCustomWord()}
-                    placeholder="A" maxLength={1}
+                    placeholder="M" maxLength={1}
                     style={{ ...inputStyle, width: "56px", fontSize: "22px", textAlign: "center", fontFamily: font }}
                   />
                 </div>
                 <div style={{ flex: 1, minWidth: "160px" }}>
-                  <label style={labelStyle}>Custom Word</label>
+                  <label style={labelStyle}>
+                    {newLetter ? `${newLetter} as in...` : "Word"}
+                  </label>
                   <input
                     value={newWord}
                     onChange={(e) => setNewWord(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && addCustomWord()}
-                    placeholder={newLetter ? `e.g. ${NATO[newLetter] || "..."}` : "e.g. Mancy"}
+                    placeholder={newLetter ? `e.g. ${NATO[newLetter] || "Mancy"}` : "e.g. Mancy"}
                     style={{ ...inputStyle, width: "100%", fontSize: "15px", fontFamily: font }}
                   />
                 </div>
@@ -573,27 +599,61 @@ export default function AlphabetSoup() {
                   No custom words yet. Add one above.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {Object.entries(customWords).sort().map(([letter, word]) => (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {Object.entries(customWords).sort().map(([letter, words]) => (
                     <div key={letter} style={{
-                      display: "flex", alignItems: "center", gap: "12px",
-                      padding: "12px 16px", background: p.bgSecondary,
+                      padding: "14px 16px", background: p.bgSecondary,
                       border: `1px solid ${activeColors.custom}33`,
                       borderLeft: `3px solid ${activeColors.custom}`,
                       borderRadius: "6px", transition: "background 0.25s",
-                      flexWrap: "wrap", rowGap: "6px",
                     }}>
-                      <span style={{ fontSize: "22px", fontWeight: "700", color: activeColors.custom, fontFamily: font, minWidth: "18px" }}>
-                        {letter}
-                      </span>
-                      <span style={{ color: p.textGhost, fontSize: "12px" }}>→</span>
-                      <span style={{ color: activeColors.custom, fontFamily: font, fontSize: "15px", flex: 1, minWidth: "80px" }}>{word}</span>
-                      <span style={{ color: p.textGhost, fontSize: "11px" }}>NATO: {NATO[letter] || "—"}</span>
-                      <button onClick={() => removeCustomWord(letter)} style={{
-                        background: "none", border: `1px solid ${p.borderMid}`, borderRadius: "4px",
-                        color: p.textMuted, cursor: "pointer", fontSize: "11px", padding: "4px 10px",
-                        fontFamily: "'IBM Plex Mono', monospace", transition: "all 0.2s",
-                      }}>Remove</button>
+                      {/* Letter header row */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                        <span style={{ fontSize: "22px", fontWeight: "700", color: activeColors.custom, fontFamily: font }}>
+                          {letter}
+                        </span>
+                        <span style={{ color: p.textGhost, fontSize: "12px" }}>as in</span>
+                        <span style={{ color: p.textGhost, fontSize: "11px", marginLeft: "auto" }}>
+                          NATO: {NATO[letter] || "—"}
+                        </span>
+                        {words.length > 1 && (
+                          <span style={{
+                            fontSize: "10px", letterSpacing: "1px",
+                            color: activeColors.custom, opacity: 0.7,
+                            background: `${activeColors.custom}18`,
+                            padding: "2px 7px", borderRadius: "10px",
+                            border: `1px solid ${activeColors.custom}33`,
+                          }}>
+                            🎲 random
+                          </span>
+                        )}
+                      </div>
+                      {/* Word chips */}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                        {words.map((word) => (
+                          <div key={word} style={{
+                            display: "flex", alignItems: "center", gap: "6px",
+                            padding: "5px 10px",
+                            background: `${activeColors.custom}14`,
+                            border: `1px solid ${activeColors.custom}44`,
+                            borderRadius: "4px",
+                          }}>
+                            <span style={{ color: activeColors.custom, fontFamily: font, fontSize: "14px" }}>
+                              {word}
+                            </span>
+                            <button
+                              onClick={() => removeCustomWord(letter, word)}
+                              title="Remove this word"
+                              style={{
+                                background: "none", border: "none", padding: "0 0 0 4px",
+                                color: p.textGhost, cursor: "pointer", fontSize: "14px",
+                                lineHeight: 1, fontFamily: "monospace",
+                                transition: "color 0.15s",
+                              }}
+                            >×</button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
