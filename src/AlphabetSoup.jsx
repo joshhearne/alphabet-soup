@@ -83,18 +83,14 @@ function parseString(input, customWords, suppressCustom) {
   });
 }
 
-function useIsTouch() {
-  const [isTouch, setIsTouch] = useState(() => {
-    // Check on first render — true if device has touch AND no reliable mouse
-    return window.matchMedia("(any-pointer: coarse)").matches;
-  });
+function useIsWide(breakpoint = 1024) {
+  const [isWide, setIsWide] = useState(() => window.innerWidth >= breakpoint);
   useEffect(() => {
-    const mq = window.matchMedia("(any-pointer: coarse)");
-    const h = (e) => setIsTouch(e.matches);
-    mq.addEventListener("change", h);
-    return () => mq.removeEventListener("change", h);
-  }, []);
-  return isTouch;
+    const handler = () => setIsWide(window.innerWidth >= breakpoint);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [breakpoint]);
+  return isWide;
 }
 
 function useSystemDark() {
@@ -202,7 +198,7 @@ function ThemeSelector({ value, onChange, accentColor, p }) {
 
 export default function AlphabetSoup() {
   const systemDark = useSystemDark();
-  const isTouch     = useIsTouch();
+  const isWide      = useIsWide();
 
   const [themePreference, setThemePreference] = usePersisted("as_theme",       "system");
   const [font,            setFont]            = usePersisted("as_font",         FONTS[0].value);
@@ -407,7 +403,7 @@ export default function AlphabetSoup() {
         </header>
 
         {/* ── TABS (desktop — top bar) ── */}
-        <div style={{ display: isTouch ? "none" : "block", 
+        <div style={{ display: isWide ? "block" : "none", 
           borderBottom: `1px solid ${p.border}`,
           transition: "border-color 0.25s",
         }}>
@@ -455,7 +451,7 @@ export default function AlphabetSoup() {
           maxWidth: "1200px",
           width: "100%",
           margin: "0 auto",
-          padding: isTouch ? "24px 16px 90px" : "40px 32px",
+          padding: isWide ? "40px 32px" : "24px 16px 90px",
         }}>
 
           {/* ══ PARSE TAB ══ */}
@@ -993,7 +989,7 @@ export default function AlphabetSoup() {
       </div>
       {/* ── MOBILE BOTTOM NAV ── */}
       <nav style={{
-        display: isTouch ? "flex" : "none",
+        display: isWide ? "none" : "flex",
         position: "fixed",
         bottom: 0, left: 0, right: 0,
         background: isDark
