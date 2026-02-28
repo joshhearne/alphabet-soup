@@ -178,6 +178,7 @@ export default function AlphabetSoup() {
   const [suppressCustom,  setSuppressCustom]  = usePersisted("as_suppress",          false);
   const [privacyDismissed,setPrivacyDismissed]= usePersisted("as_privacy_ok",        false);
   const [verboseNumbers,  setVerboseNumbers]  = usePersisted("as_verbose_numbers",   false);
+  const [verboseSymbols,  setVerboseSymbols]  = usePersisted("as_verbose_symbols",   false);
 
   const [input,     setInput]     = useState("");
   const [newLetter, setNewLetter] = useState("");
@@ -212,12 +213,14 @@ export default function AlphabetSoup() {
     if (!parsed.length) return;
     navigator.clipboard.writeText(
       parsed.map((t) =>
-        t.type === "number" && !verboseNumbers ? t.char : `${t.char.toUpperCase()} as in ${t.word}`
+      t.type === "number" && !verboseNumbers ? t.char
+      : t.type === "symbol" && !verboseSymbols ? t.char
+      : `${t.char.toUpperCase()} as in ${t.word}`
       ).join(" | ")
     );
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }, [parsed, verboseNumbers]);
+  }, [parsed, verboseNumbers, verboseSymbols]);
 
   const addCustomWord = () => {
     if (!newLetter.trim() || !newWord.trim()) return;
@@ -456,12 +459,14 @@ export default function AlphabetSoup() {
                   }}>
                     {parsed.map((token, i) => {
                       const isNumberShort = token.type === "number" && !verboseNumbers;
+                      const isSymbolShort  = token.type === "symbol"  && !verboseSymbols;
+                      const isShort = isNumberShort || isSymbolShort;
                       return (
                         <span key={i}>
                           <span style={{ color: getColor(token.type), fontWeight: "700" }}>
                             {token.char === " " ? "·" : token.char.toUpperCase()}
                           </span>
-                          {!isNumberShort && (
+                          {!isShort && (
                             <>
                               <span style={{ color: p.textGhost }}> as in </span>
                               <span style={{ color: getColor(token.type) }}>{token.word}</span>
@@ -540,6 +545,29 @@ export default function AlphabetSoup() {
                         {verboseNumbers ? "On" : "Off"}
                       </span>
                       <TogglePill on={verboseNumbers} onToggle={() => setVerboseNumbers(!verboseNumbers)} activeColor={activeColors.number} />
+                    </div>
+                  </div>
+
+                  {/* Verbose symbols toggle */}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "14px 18px", background: p.bgSecondary,
+                    border: `1px solid ${verboseSymbols ? activeColors.symbol + "55" : p.borderMid}`,
+                    borderRadius: "8px", gap: "16px", transition: "all 0.3s",
+                  }}>
+                    <div>
+                      <div style={{ fontSize: "13px", color: verboseSymbols ? activeColors.symbol : p.text, marginBottom: "3px", transition: "color 0.2s" }}>
+                        Verbose Symbol Readback
+                      </div>
+                      <div style={{ fontSize: "11px", color: p.textMuted, letterSpacing: "0.5px" }}>
+                        {verboseSymbols ? '- reads as "Dash"' : 'Symbols read as character only'}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                      <span style={{ fontSize: "12px", color: verboseSymbols ? activeColors.symbol : p.textMuted, transition: "color 0.2s", width: "20px", textAlign: "right" }}>
+                        {verboseSymbols ? "On" : "Off"}
+                      </span>
+                      <TogglePill on={verboseSymbols} onToggle={() => setVerboseSymbols(!verboseSymbols)} activeColor={activeColors.symbol} />
                     </div>
                   </div>
 
