@@ -298,8 +298,8 @@ export default function AlphabetSoup() {
         .mobile-bottom-nav { display: flex; }
         .main-content { padding: 24px 16px 90px; }
 
-        /* Desktop: wide screen AND fine pointer (mouse) = top tabs */
-        @media (min-width: 1024px) and (pointer: fine) {
+        /* Desktop: wide + hover-capable (mouse) = top tabs only */
+        @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
           .desktop-tabs { display: block; }
           .mobile-bottom-nav { display: none; }
           .main-content { padding: 40px 32px; }
