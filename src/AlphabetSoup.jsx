@@ -998,7 +998,6 @@ export default function AlphabetSoup() {
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
         borderTop: `1px solid ${p.border}`,
-        display: "flex",
         justifyContent: "space-around",
         alignItems: "stretch",
         height: "64px",
