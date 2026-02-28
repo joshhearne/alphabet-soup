@@ -614,7 +614,7 @@ export default function AlphabetSoup() {
                     Verbose Number Readback
                   </div>
                   <div style={{ fontSize: "11px", color: p.textMuted, letterSpacing: "0.5px" }}>
-                    {verboseNumbers ? "Numbers read as "5 as in Five"" : "Numbers read as digits only — "5""}
+                    {verboseNumbers ? 'Numbers read as "5 as in Five"' : 'Numbers read as digits only — "5"'}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
