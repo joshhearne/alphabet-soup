@@ -196,6 +196,8 @@ export default function AlphabetSoup() {
   const [customWords,     setCustomWords]     = usePersisted("as_customWords",  DEFAULT_CUSTOM_WORDS);
   const [suppressCustom,  setSuppressCustom]  = usePersisted("as_suppress",     false);
 
+  const [privacyDismissed, setPrivacyDismissed] = usePersisted("as_privacy_ok", false);
+
   const [input,     setInput]     = useState("");
   const [newLetter, setNewLetter] = useState("");
   const [newWord,   setNewWord]   = useState("");
@@ -271,7 +273,8 @@ export default function AlphabetSoup() {
           background: ${p.bg};
           transition: background 0.25s;
         }
-        /* Responsive card grid — tighter on small screens */
+
+        /* Responsive card grid */
         .char-grid {
           padding: 24px;
           display: flex;
@@ -288,7 +291,17 @@ export default function AlphabetSoup() {
           gap: 4px;
           border-radius: 4px;
         }
-        @media (max-width: 480px) {
+
+        /* Desktop: top tab bar visible, bottom nav hidden, normal padding */
+        .desktop-tabs { display: block; }
+        .mobile-bottom-nav { display: none; }
+        .main-content { padding: 40px 32px; }
+
+        /* Mobile: hide top tabs, show bottom nav, add bottom padding */
+        @media (max-width: 640px) {
+          .desktop-tabs { display: none; }
+          .mobile-bottom-nav { display: flex; }
+          .main-content { padding: 24px 16px 90px; }
           .char-grid { padding: 16px; gap: 6px; }
           .char-card { min-width: 62px; padding: 8px; }
         }
@@ -385,8 +398,8 @@ export default function AlphabetSoup() {
           </div>
         </header>
 
-        {/* ── TABS ── */}
-        <div style={{
+        {/* ── TABS (desktop — top bar) ── */}
+        <div className="desktop-tabs" style={{
           borderBottom: `1px solid ${p.border}`,
           transition: "border-color 0.25s",
         }}>
@@ -404,16 +417,36 @@ export default function AlphabetSoup() {
                 whiteSpace: "nowrap",
               }}>{label}</button>
             ))}
+            <div style={{ flex: 1 }} />
+            <button
+              onClick={() => { setActiveTab("about"); setPrivacyDismissed(true); }}
+              style={{
+                padding: "12px 20px", background: "none", border: "none",
+                borderBottom: activeTab === "about" ? `2px solid ${activeColors.symbol}` : "2px solid transparent",
+                color: activeTab === "about" ? activeColors.symbol : p.textFaint,
+                cursor: "pointer", fontSize: "11px", letterSpacing: "1px", textTransform: "uppercase",
+                fontFamily: "'IBM Plex Mono', monospace", transition: "color 0.2s",
+                whiteSpace: "nowrap", position: "relative",
+              }}
+            >
+              About
+              {!privacyDismissed && (
+                <span style={{
+                  position: "absolute", top: "10px", right: "12px",
+                  width: "6px", height: "6px", borderRadius: "50%",
+                  background: activeColors.symbol,
+                }} />
+              )}
+            </button>
           </div>
         </div>
 
         {/* ── CONTENT ── centered, max-width, responsive padding */}
-        <div style={{
+        <div className="main-content" style={{
           flex: 1,
           maxWidth: "1200px",
           width: "100%",
           margin: "0 auto",
-          padding: "40px 32px",
         }}>
 
           {/* ══ PARSE TAB ══ */}
@@ -810,8 +843,185 @@ export default function AlphabetSoup() {
 
             </div>
           )}
+
+          {/* ══ ABOUT TAB ══ */}
+          {activeTab === "about" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px", maxWidth: "600px" }}>
+
+              {/* Branding block */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: "16px",
+                padding: "24px", background: p.bgSecondary,
+                border: `1px solid ${p.border}`, borderRadius: "10px",
+                transition: "background 0.25s, border-color 0.25s",
+              }}>
+                <img
+                  src="/Hearne_Technologies_N1_Logo.png"
+                  alt="Hearne Technologies"
+                  style={{ height: "40px", filter: p.logoFilter, transition: "filter 0.25s" }}
+                />
+                <div>
+                  <div style={{
+                    fontSize: "18px", fontWeight: "800", letterSpacing: "-0.5px",
+                    background: gradientText,
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    marginBottom: "2px",
+                  }}>AlphabetSoup</div>
+                  <div style={{ fontSize: "11px", color: p.textFaint, letterSpacing: "2px", textTransform: "uppercase" }}>
+                    by Hearne Technologies
+                  </div>
+                </div>
+              </div>
+
+              {/* What it does */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ fontSize: "11px", letterSpacing: "2px", color: p.textMuted, textTransform: "uppercase" }}>What it does</div>
+                <div style={{
+                  padding: "20px", background: p.bgSecondary,
+                  border: `1px solid ${p.border}`, borderRadius: "8px",
+                  fontSize: "13px", color: p.textMuted, lineHeight: "1.8",
+                  transition: "background 0.25s, border-color 0.25s",
+                }}>
+                  AlphabetSoup converts alphanumeric strings into their{" "}
+                  <span style={{ color: activeColors.nato }}>NATO phonetic alphabet</span> equivalents —
+                  useful any time you need to read out a part number, serial, confirmation code,
+                  or any string of characters over the phone without ambiguity.
+                  <br /><br />
+                  Add your own custom words for any letter and the parser renders them in their own color
+                  so you always know what's standard and what's yours. Add multiple words per letter
+                  and the parser picks one at random each time, keeping readbacks from sounding robotic.
+                </div>
+              </div>
+
+              {/* Privacy */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ fontSize: "11px", letterSpacing: "2px", color: p.textMuted, textTransform: "uppercase" }}>Privacy</div>
+                <div style={{
+                  padding: "20px", background: p.bgSecondary,
+                  border: `1px solid ${activeColors.nato}33`,
+                  borderLeft: `3px solid ${activeColors.nato}`,
+                  borderRadius: "8px",
+                  transition: "background 0.25s",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                    <span style={{ fontSize: "18px" }}>🔒</span>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: p.text, letterSpacing: "0.3px" }}>
+                      Your data never leaves your device.
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "12px", color: p.textMuted, lineHeight: "1.8" }}>
+                    Everything you type, every custom word you add, every preference you set —
+                    it all stays in your browser's local storage. There are no servers receiving
+                    your input, no analytics tracking your usage, no third-party scripts,
+                    and no advertising of any kind.
+                    <br /><br />
+                    AlphabetSoup has no account system, no sign-in, and no way to identify you.
+                    When you clear your browser data, your settings clear with it —
+                    because that's the only place they ever existed.
+                  </div>
+                </div>
+              </div>
+
+              {/* Built by */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ fontSize: "11px", letterSpacing: "2px", color: p.textMuted, textTransform: "uppercase" }}>Built by</div>
+                <div style={{
+                  padding: "20px", background: p.bgSecondary,
+                  border: `1px solid ${p.border}`, borderRadius: "8px",
+                  fontSize: "13px", color: p.textMuted, lineHeight: "1.8",
+                  transition: "background 0.25s, border-color 0.25s",
+                }}>
+                  AlphabetSoup is a free tool built and maintained by{" "}
+                  <a
+                    href="https://hearnetech.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: activeColors.nato, textDecoration: "none" }}
+                  >
+                    Hearne Technologies
+                  </a>
+                  {" "}— a solo MSP and IT consultancy based in East Texas.
+                  Built for real-world use in parts, logistics, dispatch, and field service
+                  where verbal alphanumeric readback actually matters.
+                </div>
+              </div>
+
+            </div>
+          )}
+
         </div>
       </div>
+      {/* ── MOBILE BOTTOM NAV ── */}
+      <nav className="mobile-bottom-nav" style={{
+        position: "fixed",
+        bottom: 0, left: 0, right: 0,
+        background: isDark
+          ? "rgba(10,10,15,0.95)"
+          : "rgba(245,245,248,0.95)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderTop: `1px solid ${p.border}`,
+        display: "flex",
+        justifyContent: "space-around",
+        alignItems: "stretch",
+        height: "64px",
+        zIndex: 100,
+        transition: "background 0.25s, border-color 0.25s",
+      }}>
+        {[
+          { key: "parse",     label: "Parse",   icon: "⌨️" },
+          { key: "customize", label: "Custom",  icon: "🌶️" },
+          { key: "colors",    label: "Style",   icon: "🎨" },
+          { key: "about",     label: "About",   icon: "🔒",  accent: true },
+        ].map(({ key, label, icon, accent }) => {
+          const active = activeTab === key;
+          const col = accent ? activeColors.symbol : activeColors.nato;
+          const showDot = key === "about" && !privacyDismissed;
+          return (
+            <button
+              key={key}
+              onClick={() => {
+                setActiveTab(key);
+                if (key === "about") setPrivacyDismissed(true);
+              }}
+              style={{
+                flex: 1,
+                background: "none",
+                border: "none",
+                borderTop: active ? `2px solid ${col}` : "2px solid transparent",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "3px",
+                cursor: "pointer",
+                position: "relative",
+                transition: "border-color 0.2s",
+              }}
+            >
+              <span style={{ fontSize: "18px", lineHeight: 1 }}>{icon}</span>
+              <span style={{
+                fontSize: "10px",
+                letterSpacing: "0.5px",
+                textTransform: "uppercase",
+                fontFamily: "'IBM Plex Mono', monospace",
+                color: active ? col : p.textFaint,
+                transition: "color 0.2s",
+              }}>{label}</span>
+              {showDot && (
+                <span style={{
+                  position: "absolute",
+                  top: "8px",
+                  right: "calc(50% - 14px)",
+                  width: "6px", height: "6px",
+                  borderRadius: "50%",
+                  background: activeColors.symbol,
+                }} />
+              )}
+            </button>
+          );
+        })}
+      </nav>
     </>
   );
 }
