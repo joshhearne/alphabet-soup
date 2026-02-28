@@ -40,7 +40,7 @@ const COLORBLIND_THEME = {
 const DEFAULT_THEME = {
   nato: "#60a5fa", number: "#fb923c", symbol: "#a78bfa", custom: "#fbbf24",
 };
-const DEFAULT_CUSTOM_WORDS = { M: "Mancy", H: "Harambe" };
+const DEFAULT_CUSTOM_WORDS = {};
 
 const DARK = {
   bg: "#0a0a0f", bgSecondary: "#0f0f1a", bgTertiary: "#13131f",
