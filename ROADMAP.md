@@ -1,8 +1,10 @@
 # AlphabetSoup — Roadmap
 
-## Web App (nato.hearnetech.com)
+## Web App (alphabetsoup.app)
 
 Current production version. Feature complete for v1.
+
+- nato.hearnetech.com → 301 redirect to alphabetsoup.app ✓
 
 -----
 
@@ -21,9 +23,19 @@ Reuses existing React UI. Target: desk technicians on phone calls with vendors/s
 - [ ] Paste button — reads clipboard directly, no permission prompts (native app privilege)
 - [ ] Optional: clipboard watch mode — auto-parse whenever clipboard changes
 
+### Context Menu Integration
+
+- [ ] Right-click any highlighted text system-wide → “Read back with AlphabetSoup”
+- [ ] Parsed result opens in app window or a lightweight overlay/toast
+- [ ] Respects user’s saved settings (custom words, verbose toggles, font, colors)
+- [ ] Windows: registered via registry context menu handler
+- [ ] macOS: registered as a Services menu item (system-wide right-click)
+- [ ] Linux: configurable via .desktop file / file manager plugins
+
 ### File Import
 
-Read a list of strings and parse each one in sequence. Useful when a tech has a batch of serial numbers, asset tags, or part numbers to read off.
+Read a list of strings and parse each one in sequence. Useful when a tech has a batch
+of serial numbers, asset tags, or part numbers to read off.
 
 Supported formats:
 
@@ -32,7 +44,43 @@ Supported formats:
 - `.md` — strips markdown formatting, parses remaining text tokens
 - Stretch: `.xlsx` / `.xls` — first column, same logic as CSV
 
-UI concept: imported list shows as a queue — step through entries one at a time with keyboard arrow keys or a Next button. Current item parsed and displayed full-screen for easy reading during a call.
+UI concept: imported list shows as a queue — step through entries one at a time with
+keyboard arrow keys or a Next button. Current item parsed and displayed full-screen
+for easy reading during a call.
+
+-----
+
+## Browser Extension (Chrome / Edge / Firefox)
+
+Target: environments where the desktop app can’t be installed but browser extensions
+are permitted. MSP techs, helpdesk, dispatch — anyone working in a browser-heavy
+workflow (PSA tools, web ticketing, vendor portals).
+
+### Core
+
+- [ ] Right-click any highlighted text on any webpage → “Read back with AlphabetSoup”
+- [ ] Popup panel showing parsed result inline — no tab switch required
+- [ ] Toolbar button opens full parser panel (same UI as web app)
+
+### Settings Sync
+
+- [ ] Custom words, verbose toggles, colors, and font stored in extension storage
+- [ ] Optional: sync settings across browsers/devices via browser account sync
+- [ ] Settings UI embedded in extension popup — no need to visit alphabetsoup.app
+
+### Distribution
+
+- [ ] Chrome Web Store (covers Chrome + Edge via Chromium)
+- [ ] Firefox Add-ons (Mozilla AMO)
+- [ ] Manifest V3 compliant (required for Chrome/Edge going forward)
+
+### Notes
+
+- Extension and desktop app can coexist — user chooses what fits their environment
+- Extension is the lowest-friction install path for locked-down corporate desktops
+  that still allow browser extensions
+- Settings won’t automatically sync between extension and desktop app (different
+  storage contexts) — could be addressed later with an export/import flow
 
 -----
 
@@ -56,5 +104,6 @@ UI concept: imported list shows as a queue — step through entries one at a tim
 ## Deferred / Under Consideration
 
 - Team profile export/import — share custom word sets across a team (JSON)
+- Settings sync between desktop app and browser extension
 - PWA manifest — installable from browser without app store
 - Tauri desktop app auto-updater
