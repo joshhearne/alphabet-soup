@@ -220,13 +220,15 @@ footer {
   <h2>Browser extension</h2>
   <p>
     The AlphabetSoup browser extension stores your settings using the browser's built-in
-    extension storage API (<code>chrome.storage.local</code>). This data remains on your
-    device and is never transmitted to any external server.
+    extension storage API. On Chrome and Edge this is <code>chrome.storage.local</code>;
+    on Firefox this is <code>browser.storage.local</code>. Both APIs store data locally
+    on your device only and never transmit it to any external server.
   </p>
   <p>
     The extension reads highlighted text only when you explicitly invoke the
     "Read back with AlphabetSoup" context menu item. It does not monitor, record,
-    or transmit any text you select on any page.
+    or transmit any text you select on any page. The selected text is passed directly
+    to the extension popup for parsing and is never stored or sent anywhere.
   </p>
 </section>
 
