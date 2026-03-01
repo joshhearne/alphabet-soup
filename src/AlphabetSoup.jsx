@@ -182,15 +182,66 @@ export default function AlphabetSoup() {
 
   const [input,     setInput]     = useState("");
   const [newLetter, setNewLetter] = useState("");
-  const [newWord,   setNewWord]   = useState("");
-  const [activeTab, setActiveTab] = useState("parse");
-  const [copied,    setCopied]    = useState(false);
+  const [newWord,      setNewWord]      = useState("");
+  const [activeTab,    setActiveTab]    = useState("parse");
+  const [copied,       setCopied]       = useState(false);
+  const [importError,  setImportError]  = useState("");
 
   const isDark       = themePreference === "system" ? systemDark : themePreference === "dark";
   const p            = isDark ? DARK : LIGHT;
   const activeColors = colorblind ? COLORBLIND_THEME : colors;
   const parsed       = input ? parseString(input, customWords, suppressCustom) : [];
   const getColor     = (type) => type === "unknown" ? p.textMuted : activeColors[type];
+
+  // ── EXPORT ────────────────────────────────────────────────────────────────
+  const exportSettings = () => {
+    const payload = {
+      version: 1,
+      exported: new Date().toISOString(),
+      settings: {
+        theme:          themePreference,
+        font,
+        colorblind,
+        colors,
+        verboseNumbers,
+        verboseSymbols,
+        customWords,
+      },
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = "alphabetsoup-settings.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── IMPORT ────────────────────────────────────────────────────────────────
+  const importSettings = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportError("");
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const json = JSON.parse(ev.target.result);
+        if (!json.settings) throw new Error("Invalid file — missing settings key.");
+        const s = json.settings;
+        if (s.theme          !== undefined) setThemePreference(s.theme);
+        if (s.font           !== undefined) setFont(s.font);
+        if (s.colorblind     !== undefined) setColorblind(s.colorblind);
+        if (s.colors         !== undefined) setColors(s.colors);
+        if (s.verboseNumbers !== undefined) setVerboseNumbers(s.verboseNumbers);
+        if (s.verboseSymbols !== undefined) setVerboseSymbols(s.verboseSymbols);
+        if (s.customWords    !== undefined) setCustomWords(s.customWords);
+      } catch (err) {
+        setImportError(err.message || "Failed to parse settings file.");
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   const themeSubtitle =
     themePreference === "system" ? `System · ${systemDark ? "dark" : "light"} active` :
@@ -821,6 +872,43 @@ export default function AlphabetSoup() {
                 <span>✦</span>
                 <span>All preferences are saved automatically in your browser.</span>
               </div>
+
+              {/* ── PORTABLE SETTINGS ── */}
+              <div style={{ borderTop: `1px solid ${p.border}`, paddingTop: "28px" }}>
+                <div style={{ fontSize: "11px", letterSpacing: "2px", color: p.textMuted, textTransform: "uppercase", marginBottom: "14px" }}>
+                  Portable Settings
+                </div>
+                <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center", marginBottom: "12px" }}>
+                  <button onClick={exportSettings} style={{
+                    padding: "10px 22px", borderRadius: "6px", cursor: "pointer",
+                    background: `${activeColors.nato}18`,
+                    border: `1px solid ${activeColors.nato}55`,
+                    color: activeColors.nato,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: "12px", letterSpacing: "1px",
+                  }}>
+                    ↓ Export settings.json
+                  </button>
+                  <label style={{
+                    padding: "10px 22px", borderRadius: "6px", cursor: "pointer",
+                    background: `${activeColors.custom}18`,
+                    border: `1px solid ${activeColors.custom}55`,
+                    color: activeColors.custom,
+                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontSize: "12px", letterSpacing: "1px",
+                  }}>
+                    ↑ Import settings.json
+                    <input type="file" accept=".json" onChange={importSettings} style={{ display: "none" }} />
+                  </label>
+                  {importError && (
+                    <span style={{ fontSize: "11px", color: "#f87171" }}>{importError}</span>
+                  )}
+                </div>
+                <div style={{ fontSize: "11px", color: p.textGhost, lineHeight: 1.6 }}>
+                  Export your settings and import them in the browser extension or on any other device.
+                </div>
+              </div>
+
             </div>
           )}
 
