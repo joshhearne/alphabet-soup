@@ -148,7 +148,7 @@ function ThemeSelector({ value, onChange, accentColor, p }) {
         const active = value === key;
         return (
           <button key={key} onClick={() => onChange(key)} style={{
-            width: "80px", padding: "7px 0",
+            width: "70px", padding: "7px 4px",
             background: active ? accentColor : "transparent",
             border: "none", borderRadius: "6px",
             color: active ? "#fff" : p.textMuted,
@@ -257,11 +257,12 @@ export default function AlphabetSoup() {
           min-width: 76px; flex: 0 0 auto; padding: 10px 12px; gap: 4px; border-radius: 4px;
         }
         .two-col { display: grid; grid-template-columns: 1fr; gap: 24px; width: 100%; }
-        @media (min-width: 900px) { .two-col { grid-template-columns: 1fr 1fr; align-items: start; } }
+        @media (min-width: 1024px) { .two-col { grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: start; } }
         @media (max-width: 640px) {
           .char-grid { padding: 16px; gap: 6px; }
           .char-card { min-width: 62px; padding: 8px; }
         }
+        input[type=color] { max-width: 100%; }
       `}</style>
 
       {/* ── PAGE WRAPPER ── */}
@@ -269,6 +270,7 @@ export default function AlphabetSoup() {
         minHeight: "100vh", background: p.bg, color: p.text,
         fontFamily: "'IBM Plex Mono', monospace",
         display: "flex", flexDirection: "column",
+        overflowX: "hidden",
         transition: "background 0.25s, color 0.25s",
       }}>
 
@@ -689,12 +691,11 @@ export default function AlphabetSoup() {
                     border: `1px solid ${p.borderMid}`, borderRadius: "8px",
                     transition: "background 0.25s, border-color 0.25s",
                   }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "nowrap" }}>
+                    <div style={{ display: "flex", alignItems: isWide ? "center" : "flex-start", justifyContent: "space-between", gap: "12px", flexDirection: isWide ? "row" : "column" }}>
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontSize: "13px", color: p.text, marginBottom: "4px" }}>Theme</div>
                         <div style={{
                           fontSize: "11px", color: p.textMuted, letterSpacing: "0.5px",
-                          width: "220px", whiteSpace: "nowrap", overflow: "hidden",
                         }}>
                           {themeSubtitle}
                         </div>
@@ -738,28 +739,42 @@ export default function AlphabetSoup() {
                       { key: "symbol", label: "Symbols"               },
                       { key: "custom", label: "Custom Override Words"  },
                     ].map(({ key, label }) => (
-                      <div key={key} style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                        <div style={{
-                          width: "40px", height: "40px", borderRadius: "8px",
+                      <div key={key} style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
+                        {/* Swatch — clicking it triggers the hidden color input */}
+                        <label htmlFor={`color-${key}`} style={{
+                          width: "40px", height: "40px", borderRadius: "8px", flexShrink: 0,
                           background: activeColors[key], border: `2px solid ${p.borderMid}`,
-                          flexShrink: 0, transition: "border-color 0.25s",
-                        }} />
-                        <div style={{ flex: 1 }}>
-                          <label style={labelStyle}>{label}</label>
+                          cursor: colorblind ? "not-allowed" : "pointer",
+                          display: "block", transition: "border-color 0.25s",
+                          position: "relative", overflow: "hidden",
+                        }}>
+                          {/* Hidden native color picker — zero layout footprint */}
                           <input
-                            type="color" value={colors[key]} disabled={colorblind}
+                            id={`color-${key}`}
+                            type="color"
+                            value={colors[key]}
+                            disabled={colorblind}
                             onChange={(e) => setColors((prev) => ({ ...prev, [key]: e.target.value }))}
                             style={{
-                              width: "100%", height: "36px", padding: "2px",
-                              background: p.bgSecondary, border: `1px solid ${p.borderMid}`,
-                              borderRadius: "4px", cursor: colorblind ? "not-allowed" : "pointer",
-                              opacity: colorblind ? 0.35 : 1, transition: "opacity 0.2s",
+                              position: "absolute", top: 0, left: 0,
+                              width: "1px", height: "1px",
+                              opacity: 0, pointerEvents: colorblind ? "none" : "auto",
                             }}
                           />
+                        </label>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ ...labelStyle, marginBottom: "4px" }}>{label}</div>
+                          <div style={{
+                            fontSize: "12px", color: colorblind ? p.textGhost : activeColors[key],
+                            fontFamily: "'IBM Plex Mono', monospace",
+                            opacity: colorblind ? 0.4 : 1,
+                          }}>
+                            {colors[key]}
+                          </div>
                         </div>
                         {!colorblind && (
                           <button onClick={() => setColors((prev) => ({ ...prev, [key]: DEFAULT_THEME[key] }))} style={{
-                            padding: "6px 12px", background: "none",
+                            padding: "6px 12px", background: "none", flexShrink: 0,
                             border: `1px solid ${p.borderMid}`, borderRadius: "4px",
                             color: p.textMuted, cursor: "pointer", fontSize: "10px",
                             fontFamily: "'IBM Plex Mono', monospace", letterSpacing: "1px", whiteSpace: "nowrap",
@@ -780,12 +795,13 @@ export default function AlphabetSoup() {
                           borderLeft: `3px solid ${font === f.value ? activeColors.nato : p.borderMid}`,
                           borderRadius: "6px", cursor: "pointer",
                           display: "flex", justifyContent: "space-between", alignItems: "center",
+                          overflow: "hidden",
                           transition: "border-color 0.2s, background 0.25s",
                         }}>
-                          <span style={{ fontFamily: f.value, color: font === f.value ? activeColors.nato : p.text, fontSize: "15px", transition: "color 0.2s" }}>
+                          <span style={{ fontFamily: f.value, color: font === f.value ? activeColors.nato : p.text, fontSize: "15px", transition: "color 0.2s", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: "12px" }}>
                             {f.label}
                           </span>
-                          <span style={{ fontFamily: f.value, color: p.textFaint, fontSize: "13px", letterSpacing: "3px" }}>
+                          <span style={{ fontFamily: f.value, color: p.textFaint, fontSize: "13px", letterSpacing: "3px", flexShrink: 0 }}>
                             ABC-123
                           </span>
                         </div>
@@ -811,31 +827,6 @@ export default function AlphabetSoup() {
           {/* ══ ABOUT TAB ══ */}
           {activeTab === "about" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "28px", width: "100%" }}>
-
-              {/* Branding block */}
-              <div style={{
-                display: "flex", alignItems: "center", gap: "16px",
-                padding: "24px", background: p.bgSecondary,
-                border: `1px solid ${p.border}`, borderRadius: "10px",
-                transition: "background 0.25s, border-color 0.25s",
-              }}>
-                <img
-                  src="/Hearne_Technologies_N1_Logo.png"
-                  alt="Hearne Technologies"
-                  style={{ height: "40px", filter: p.logoFilter, transition: "filter 0.25s" }}
-                />
-                <div>
-                  <div style={{
-                    fontSize: "18px", fontWeight: "800", letterSpacing: "-0.5px",
-                    background: gradientText,
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    marginBottom: "2px",
-                  }}>AlphabetSoup</div>
-                  <div style={{ fontSize: "11px", color: p.textFaint, letterSpacing: "2px", textTransform: "uppercase" }}>
-                    by Hearne Technologies
-                  </div>
-                </div>
-              </div>
 
               <div className="two-col">
 
@@ -932,6 +923,32 @@ export default function AlphabetSoup() {
 
                 </div>
               </div>
+
+              {/* Branding block — bottom */}
+              <div style={{
+                display: "flex", alignItems: "center", gap: "16px",
+                padding: "24px", background: p.bgSecondary,
+                border: `1px solid ${p.border}`, borderRadius: "10px",
+                transition: "background 0.25s, border-color 0.25s",
+              }}>
+                <img
+                  src="/Hearne_Technologies_N1_Logo.png"
+                  alt="Hearne Technologies"
+                  style={{ height: "40px", filter: p.logoFilter, transition: "filter 0.25s" }}
+                />
+                <div>
+                  <div style={{
+                    fontSize: "18px", fontWeight: "800", letterSpacing: "-0.5px",
+                    background: gradientText,
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    marginBottom: "2px",
+                  }}>AlphabetSoup</div>
+                  <div style={{ fontSize: "11px", color: p.textFaint, letterSpacing: "2px", textTransform: "uppercase" }}>
+                    by Hearne Technologies
+                  </div>
+                </div>
+              </div>
+
             </div>
           )}
 
