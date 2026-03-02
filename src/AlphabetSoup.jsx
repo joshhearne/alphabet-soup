@@ -346,14 +346,14 @@ export default function AlphabetSoup() {
                 />
               )}
               <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px",
-                  background: gradientText,
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                  display: "inline-block", whiteSpace: "nowrap",
-                  transform: "translateZ(0)",
-                  willChange: "background",
-                }}>AlphabetSoup</div>
+                <div style={{ fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px", whiteSpace: "nowrap" }}>
+                  <span key={gradientText} style={{
+                    background: gradientText,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    display: "inline-block",
+                  }}>AlphabetSoup</span>
+                </div>
                 <div style={{ fontSize: "10px", color: p.textFaint, letterSpacing: "3px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                   by Hearne Technologies
                 </div>
@@ -1027,14 +1027,14 @@ export default function AlphabetSoup() {
                   style={{ height: "40px", filter: p.logoFilter, transition: "filter 0.25s" }}
                 />
                 <div>
-                  <div style={{
-                    fontSize: "18px", fontWeight: "800", letterSpacing: "-0.5px",
-                    background: gradientText,
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    display: "inline-block", marginBottom: "2px",
-                    transform: "translateZ(0)",
-                    willChange: "background",
-                  }}>AlphabetSoup</div>
+                  <div style={{ fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px", whiteSpace: "nowrap" }}>
+                    <span key={gradientText} style={{
+                      background: gradientText,
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      display: "inline-block",
+                    }}>AlphabetSoup</span>
+                  </div>
                   <div style={{ fontSize: "11px", color: p.textFaint, letterSpacing: "2px", textTransform: "uppercase" }}>
                     by Hearne Technologies
                   </div>
