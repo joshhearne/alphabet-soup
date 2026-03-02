@@ -351,6 +351,8 @@ export default function AlphabetSoup() {
                   background: gradientText,
                   WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                   display: "inline-block", whiteSpace: "nowrap",
+                  transform: "translateZ(0)",
+                  willChange: "background",
                 }}>AlphabetSoup</div>
                 <div style={{ fontSize: "10px", color: p.textFaint, letterSpacing: "3px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                   by Hearne Technologies
@@ -1030,6 +1032,8 @@ export default function AlphabetSoup() {
                     background: gradientText,
                     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                     display: "inline-block", marginBottom: "2px",
+                    transform: "translateZ(0)",
+                    willChange: "background",
                   }}>AlphabetSoup</div>
                   <div style={{ fontSize: "11px", color: p.textFaint, letterSpacing: "2px", textTransform: "uppercase" }}>
                     by Hearne Technologies
