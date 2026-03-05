@@ -1,4 +1,13 @@
-/.env /404 404
-/.git/* /404 404
-/.env.* /404 404
-/* /index.html 200
+# Block dotfiles and sensitive paths - return 404
+/.env                /404.html  404
+/.env.*              /404.html  404
+/.git                /404.html  404
+/.git/*              /404.html  404
+/.gitignore          /404.html  404
+/.htaccess           /404.html  404
+/wp-login.php        /404.html  404
+/wp-admin            /404.html  404
+/wp-admin/*          /404.html  404
+/xmlrpc.php          /404.html  404
+/phpmyadmin          /404.html  404
+/phpmyadmin/*        /404.html  404
