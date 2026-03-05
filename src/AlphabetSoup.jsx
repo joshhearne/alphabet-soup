@@ -314,6 +314,14 @@ export default function AlphabetSoup() {
           .char-card { min-width: 62px; padding: 8px; }
         }
         input[type=color] { max-width: 100%; }
+        .gradient-text {
+          background: ${gradientText};
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
+          display: inline-block;
+        }
       `}</style>
 
       {/* ── PAGE WRAPPER ── */}
@@ -346,11 +354,9 @@ export default function AlphabetSoup() {
                 />
               )}
               <div style={{ minWidth: 0 }}>
-                <div style={{
+                <div className="gradient-text" style={{
                   fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px",
-                  background: gradientText,
-                  WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent",
-                  display: "inline-block", whiteSpace: "nowrap",
+                  whiteSpace: "nowrap",
                 }}>AlphabetSoup</div>
                 <div style={{ fontSize: "10px", color: p.textFaint, letterSpacing: "3px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                   by Hearne Technologies
@@ -930,11 +936,9 @@ export default function AlphabetSoup() {
               }}>
                 <div style={{ fontSize: "48px", lineHeight: 1, flexShrink: 0 }}>🧩</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{
+                  <div className="gradient-text" style={{
                     fontSize: "18px", fontWeight: "800", letterSpacing: "-0.3px",
-                    background: gradientText,
-                    WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent",
-                    display: "inline-block", marginBottom: "6px",
+                    marginBottom: "6px",
                   }}>
                     AlphabetSoup for Chrome
                   </div>
@@ -1139,11 +1143,9 @@ export default function AlphabetSoup() {
                   style={{ height: "40px", filter: p.logoFilter, transition: "filter 0.25s" }}
                 />
                 <div>
-                  <div style={{
+                  <div className="gradient-text" style={{
                     fontSize: "18px", fontWeight: "800", letterSpacing: "-0.5px",
-                    background: gradientText,
-                    WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent",
-                    display: "inline-block", marginBottom: "2px",
+                    marginBottom: "2px",
                   }}>AlphabetSoup</div>
                   <div style={{ fontSize: "11px", color: p.textFaint, letterSpacing: "2px", textTransform: "uppercase" }}>
                     by Hearne Technologies
