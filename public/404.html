@@ -1,0 +1,250 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — AlphabetSoup</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+```
+:root {
+  --bg: #0a0a0f;
+  --bg-card: #0f0f1a;
+  --border: #1e1e2e;
+  --border-mid: #2a2a3e;
+  --text: #e2e8f0;
+  --muted: #6b7280;
+  --faint: #4a4a6a;
+  --nato: #60a5fa;
+  --font: 'JetBrains Mono', 'IBM Plex Mono', 'Courier New', monospace;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f5f5f8;
+    --bg-card: #ffffff;
+    --border: #dcdce8;
+    --border-mid: #c8c8dc;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --faint: #8888a0;
+    --nato: #3b82f6;
+  }
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.8;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+}
+
+.logo-link {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #60a5fa, #fb923c, #a78bfa, #fbbf24);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.logo-sub {
+  font-size: 9px;
+  color: var(--faint);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+main {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 80px 32px 80px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.error-code {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 12px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 48px;
+  line-height: 1.9;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--nato);
+  border-left: 3px solid var(--nato);
+  border-radius: 8px;
+  padding: 24px 28px;
+  margin-bottom: 32px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.card-header span {
+  font-size: 20px;
+}
+
+.card-header strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.3px;
+}
+
+.card p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.btn:hover { opacity: 0.8; text-decoration: none; }
+
+.btn-primary {
+  background: var(--nato);
+  color: #0a0a0f;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border-mid);
+}
+
+a {
+  color: var(--nato);
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 24px 32px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--faint);
+  letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+  header { padding: 16px; }
+  main { padding: 48px 16px 80px; }
+  footer { padding: 20px 16px; }
+  h1 { font-size: 22px; }
+}
+```
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="https://alphabetsoup.app" class="logo-link">
+      <span class="logo-title">AlphabetSoup</span>
+      <span class="logo-sub">by Hearne Technologies</span>
+    </a>
+    <a href="https://alphabetsoup.app" style="font-size: 11px; color: var(--faint); letter-spacing: 1px;">← Back to app</a>
+  </header>
+
+  <main>
+    <p class="error-code">Error 404</p>
+    <h1>Page not found.</h1>
+    <p class="subtitle">
+      The path you requested doesn't exist. It may have moved,<br>
+      been removed, or never existed in the first place.
+    </p>
+
+```
+<div class="card">
+  <div class="card-header">
+    <span>📡</span>
+    <strong>NATO alphabet for "404": Foxtrot — Zero — Foxtrot</strong>
+  </div>
+  <p>
+    Even our error pages speak the language. Head back to the app
+    and let AlphabetSoup translate something more useful.
+  </p>
+</div>
+
+<div class="actions">
+  <a href="https://alphabetsoup.app" class="btn btn-primary">← Back to app</a>
+  <a href="https://github.com/joshhearne/alphabet-soup/issues" class="btn btn-ghost" target="_blank" rel="noopener noreferrer">Report an issue</a>
+</div>
+```
+
+  </main>
+
+  <footer>
+    AlphabetSoup &nbsp;·&nbsp; <a href="https://alphabetsoup.app">alphabetsoup.app</a>
+    &nbsp;·&nbsp; Built by <a href="https://hearnetech.com">Hearne Technologies</a>
+  </footer>
+
+</body>
+</html>
