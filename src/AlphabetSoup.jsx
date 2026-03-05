@@ -22,7 +22,7 @@ const SYMBOL_NAMES = {
   ";": "Semicolon", "(": "Open-Paren", ")": "Close-Paren",
   "[": "Open-Bracket", "]": "Close-Bracket", "<": "Less-Than",
   ">": "Greater-Than", ",": "Comma", "'": "Apostrophe", '"': "Quote",
-  " ": "Space", "^", "Caret",
+  " ": "Space", "^": "Caret",
 };
 
 const FONTS = [
