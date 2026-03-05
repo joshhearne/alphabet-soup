@@ -349,8 +349,8 @@ export default function AlphabetSoup() {
                 <div style={{
                   fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px",
                   background: gradientText,
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                  whiteSpace: "nowrap",
+                  WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent",
+                  display: "inline-block", whiteSpace: "nowrap",
                 }}>AlphabetSoup</div>
                 <div style={{ fontSize: "10px", color: p.textFaint, letterSpacing: "3px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                   by Hearne Technologies
@@ -933,8 +933,8 @@ export default function AlphabetSoup() {
                   <div style={{
                     fontSize: "18px", fontWeight: "800", letterSpacing: "-0.3px",
                     background: gradientText,
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    marginBottom: "6px",
+                    WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent",
+                    display: "inline-block", marginBottom: "6px",
                   }}>
                     AlphabetSoup for Chrome
                   </div>
@@ -1142,8 +1142,8 @@ export default function AlphabetSoup() {
                   <div style={{
                     fontSize: "18px", fontWeight: "800", letterSpacing: "-0.5px",
                     background: gradientText,
-                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                    marginBottom: "2px",
+                    WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent",
+                    display: "inline-block", marginBottom: "2px",
                   }}>AlphabetSoup</div>
                   <div style={{ fontSize: "11px", color: p.textFaint, letterSpacing: "2px", textTransform: "uppercase" }}>
                     by Hearne Technologies
