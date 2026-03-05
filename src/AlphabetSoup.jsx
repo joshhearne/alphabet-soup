@@ -22,7 +22,7 @@ const SYMBOL_NAMES = {
   ";": "Semicolon", "(": "Open-Paren", ")": "Close-Paren",
   "[": "Open-Bracket", "]": "Close-Bracket", "<": "Less-Than",
   ">": "Greater-Than", ",": "Comma", "'": "Apostrophe", '"': "Quote",
-  " ": "Space","^": "Caret",
+  " ": "Space", "^", "Caret",
 };
 
 const FONTS = [
@@ -346,14 +346,12 @@ export default function AlphabetSoup() {
                 />
               )}
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px", whiteSpace: "nowrap" }}>
-                  <span key={gradientText} style={{
-                    background: gradientText,
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    display: "inline-block",
-                  }}>AlphabetSoup</span>
-                </div>
+                <div style={{
+                  fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px",
+                  background: gradientText,
+                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                  whiteSpace: "nowrap",
+                }}>AlphabetSoup</div>
                 <div style={{ fontSize: "10px", color: p.textFaint, letterSpacing: "3px", textTransform: "uppercase", whiteSpace: "nowrap" }}>
                   by Hearne Technologies
                 </div>
@@ -403,7 +401,7 @@ export default function AlphabetSoup() {
             maxWidth: "1200px", margin: "0 auto", padding: "0 32px",
             display: "flex",
           }}>
-            {[["parse", "Parse"], ["customize", "Custom Words"], ["colors", "Colors & Fonts"]].map(([key, label]) => (
+            {[["parse", "Parse"], ["customize", "Custom Words"], ["colors", "Colors & Fonts"], ["downloads", "Downloads"]].map(([key, label]) => (
               <button key={key} onClick={() => setActiveTab(key)} style={{
                 padding: "12px 20px", background: "none", border: "none",
                 borderBottom: activeTab === key ? `2px solid ${activeColors.nato}` : "2px solid transparent",
@@ -914,6 +912,120 @@ export default function AlphabetSoup() {
             </div>
           )}
 
+          {/* ══ DOWNLOADS TAB ══ */}
+          {activeTab === "downloads" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "28px", width: "100%" }}>
+
+              {/* Chrome Extension hero card */}
+              <div style={{
+                padding: "28px 32px",
+                background: p.bgSecondary,
+                border: `1px solid ${activeColors.nato}33`,
+                borderLeft: `3px solid ${activeColors.nato}`,
+                borderRadius: "10px",
+                display: "flex", flexDirection: isWide ? "row" : "column",
+                alignItems: isWide ? "center" : "flex-start",
+                gap: "24px",
+                transition: "background 0.25s",
+              }}>
+                <div style={{ fontSize: "48px", lineHeight: 1, flexShrink: 0 }}>🧩</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontSize: "18px", fontWeight: "800", letterSpacing: "-0.3px",
+                    background: gradientText,
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    marginBottom: "6px",
+                  }}>
+                    AlphabetSoup for Chrome
+                  </div>
+                  <div style={{ fontSize: "13px", color: p.textMuted, lineHeight: "1.8", marginBottom: "16px" }}>
+                    Highlight any text on any webpage, right-click, and instantly read back the phonetic
+                    spelling — without leaving the page. The extension brings AlphabetSoup to wherever
+                    you're already working.
+                  </div>
+                  <a
+                    href="https://chromewebstore.google.com/detail/alphabetsoup/loekomefinlhckgbbnbfhibnogapoigo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: "8px",
+                      padding: "10px 20px",
+                      background: activeColors.nato,
+                      color: "#fff", borderRadius: "6px",
+                      fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                      textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
+                      transition: "opacity 0.2s",
+                    }}
+                    onMouseOver={e => e.currentTarget.style.opacity = "0.85"}
+                    onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                  >
+                    <span>Add to Chrome</span>
+                    <span style={{ fontSize: "14px" }}>→</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* How it works */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ fontSize: "11px", letterSpacing: "2px", color: p.textMuted, textTransform: "uppercase" }}>
+                  How it works
+                </div>
+                <div className="two-col">
+                  {[
+                    { icon: "1️⃣", title: "Highlight", body: "Select any text on any webpage — a part number, serial, confirmation code, whatever you need to read back." },
+                    { icon: "2️⃣", title: "Right-click", body: "Right-click the selection and choose \"AlphabetSoup\" from the context menu." },
+                    { icon: "3️⃣", title: "Read back", body: "A pop-up displays the full phonetic breakdown, ready to read out loud. No tab switching, no copy-pasting." },
+                  ].map(({ icon, title, body }) => (
+                    <div key={title} style={{
+                      padding: "20px", background: p.bgSecondary,
+                      border: `1px solid ${p.border}`, borderRadius: "8px",
+                      display: "flex", gap: "14px", alignItems: "flex-start",
+                      transition: "background 0.25s, border-color 0.25s",
+                    }}>
+                      <span style={{ fontSize: "22px", lineHeight: 1, flexShrink: 0, marginTop: "1px" }}>{icon}</span>
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: "700", color: p.text, marginBottom: "6px" }}>{title}</div>
+                        <div style={{ fontSize: "12px", color: p.textMuted, lineHeight: "1.7" }}>{body}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Settings sync */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ fontSize: "11px", letterSpacing: "2px", color: p.textMuted, textTransform: "uppercase" }}>
+                  Settings sync
+                </div>
+                <div style={{
+                  padding: "20px", background: p.bgSecondary,
+                  border: `1px solid ${activeColors.custom}33`,
+                  borderLeft: `3px solid ${activeColors.custom}`,
+                  borderRadius: "8px",
+                  transition: "background 0.25s",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+                    <span style={{ fontSize: "18px" }}>🔄</span>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: p.text }}>
+                      Export from here, import in the extension — coming in v1.1.0
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "12px", color: p.textMuted, lineHeight: "1.8" }}>
+                    AlphabetSoup uses a portable{" "}
+                    <span style={{ color: activeColors.custom }}>settings.json</span> format so your custom
+                    words, color theme, font, and preferences can travel with you. Export your settings from
+                    the Colors &amp; Fonts tab here on the web app, and import them directly into the Chrome
+                    extension — or vice versa. No account required.
+                    <br /><br />
+                    Full export/import support is already live in the web app. Extension parity is coming
+                    in the <span style={{ color: activeColors.nato }}>v1.1.0</span> extension update.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
+
           {/* ══ ABOUT TAB ══ */}
           {activeTab === "about" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "28px", width: "100%" }}>
@@ -1027,14 +1139,12 @@ export default function AlphabetSoup() {
                   style={{ height: "40px", filter: p.logoFilter, transition: "filter 0.25s" }}
                 />
                 <div>
-                  <div style={{ fontSize: isWide ? "22px" : "19px", fontWeight: "800", letterSpacing: "-0.5px", whiteSpace: "nowrap" }}>
-                    <span key={gradientText} style={{
-                      background: gradientText,
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      display: "inline-block",
-                    }}>AlphabetSoup</span>
-                  </div>
+                  <div style={{
+                    fontSize: "18px", fontWeight: "800", letterSpacing: "-0.5px",
+                    background: gradientText,
+                    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                    marginBottom: "2px",
+                  }}>AlphabetSoup</div>
                   <div style={{ fontSize: "11px", color: p.textFaint, letterSpacing: "2px", textTransform: "uppercase" }}>
                     by Hearne Technologies
                   </div>
@@ -1062,10 +1172,11 @@ export default function AlphabetSoup() {
         transition: "background 0.25s, border-color 0.25s",
       }}>
         {[
-          { key: "parse",     label: "Parse",  icon: "⌨️"  },
-          { key: "customize", label: "Custom", icon: "🌶️"  },
-          { key: "colors",    label: "Style",  icon: "🎨"  },
-          { key: "about",     label: "About",  icon: "🔒", accent: true },
+          { key: "parse",     label: "Parse",    icon: "⌨️"  },
+          { key: "customize", label: "Custom",   icon: "🌶️"  },
+          { key: "colors",    label: "Style",    icon: "🎨"  },
+          { key: "downloads", label: "Downloads",icon: "🧩"  },
+          { key: "about",     label: "About",    icon: "🔒", accent: true },
         ].map(({ key, label, icon, accent }) => {
           const active   = activeTab === key;
           const col      = accent ? activeColors.symbol : activeColors.nato;
