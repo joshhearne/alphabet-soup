@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
 // ── DATA MAPS ────────────────────────────────────────────────────────────────
 
@@ -22,7 +22,8 @@ const SYMBOL_NAMES = {
   ";": "Semicolon", "(": "Open-Paren", ")": "Close-Paren",
   "[": "Open-Bracket", "]": "Close-Bracket", "<": "Less-Than",
   ">": "Greater-Than", ",": "Comma", "'": "Apostrophe", '"': "Quote",
-  " ": "Space", "^": "Caret",
+  " ": "Space", "^": "Caret", "`": "Backtick", "~": "Tilde",
+  "{": "Open-Brace", "}": "Close-Brace", "|": "Pipe",
 };
 
 const FONTS = [
@@ -166,6 +167,181 @@ function ThemeSelector({ value, onChange, accentColor, p }) {
   );
 }
 
+function BarcodeScanner({ onScan, onClose, p, accentColor }) {
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    let animId;
+
+    (async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("Camera not available. Requires HTTPS.");
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+        streamRef.current = stream;
+
+        const video = videoRef.current;
+        video.srcObject = stream;
+        video.setAttribute("playsinline", "true");
+        await video.play();
+        if (!cancelled) setLoading(false);
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+        const hasBD = "BarcodeDetector" in window;
+        let supportedFormats = [];
+        if (hasBD) {
+          try { supportedFormats = await BarcodeDetector.getSupportedFormats(); } catch (_) {}
+        }
+
+        if (hasBD && supportedFormats.length > 0) {
+          const detector = new BarcodeDetector({ formats: supportedFormats });
+          const scan = () => {
+            if (cancelled || !video.videoWidth) {
+              animId = requestAnimationFrame(scan);
+              return;
+            }
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            detector.detect(canvas).then((barcodes) => {
+              if (cancelled) return;
+              if (barcodes.length > 0) {
+                stream.getTracks().forEach((t) => t.stop());
+                onScan(barcodes[0].rawValue);
+              } else {
+                animId = requestAnimationFrame(scan);
+              }
+            }).catch(() => {
+              if (!cancelled) animId = requestAnimationFrame(scan);
+            });
+          };
+          animId = requestAnimationFrame(scan);
+        } else {
+          const { readBarcodesFromImageData } = await import("zxing-wasm/reader");
+          if (cancelled) return;
+          const scan = () => {
+            if (cancelled || !video.videoWidth) {
+              animId = requestAnimationFrame(scan);
+              return;
+            }
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            readBarcodesFromImageData(imageData, {
+              tryHarder: true,
+              formats: ["QRCode", "EAN-13", "EAN-8", "Code128", "Code39",
+                        "UPC-A", "UPC-E", "ITF", "Codabar", "DataMatrix"],
+            }).then((results) => {
+              if (cancelled) return;
+              if (results.length > 0 && results[0].text) {
+                stream.getTracks().forEach((t) => t.stop());
+                onScan(results[0].text);
+              } else {
+                animId = requestAnimationFrame(scan);
+              }
+            }).catch(() => {
+              if (!cancelled) animId = requestAnimationFrame(scan);
+            });
+          };
+          animId = requestAnimationFrame(scan);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const msg = err?.message || String(err);
+          if (msg.includes("NotAllowedError") || msg.includes("Permission")) {
+            setError("Camera access denied. Check browser permissions.");
+          } else if (msg.includes("NotFoundError") || msg.includes("no camera")) {
+            setError("No camera found on this device.");
+          } else {
+            setError("Could not start camera: " + msg);
+          }
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (animId) cancelAnimationFrame(animId);
+      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(0,0,0,0.85)",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      padding: "16px",
+    }}>
+      <div style={{
+        width: "100%", maxWidth: "400px",
+        borderRadius: "12px", overflow: "hidden",
+        background: p.bgSecondary, border: `1px solid ${p.border}`,
+      }}>
+        <div style={{
+          padding: "12px 16px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          borderBottom: `1px solid ${p.border}`,
+        }}>
+          <span style={{
+            fontSize: "11px", letterSpacing: "2px", color: p.textMuted,
+            textTransform: "uppercase", fontFamily: "'IBM Plex Mono', monospace",
+          }}>
+            Scan Barcode
+          </span>
+          <button onClick={onClose} style={{
+            background: "none", border: "none", color: p.textMuted,
+            cursor: "pointer", fontSize: "18px", fontFamily: "monospace",
+            padding: "0 4px", lineHeight: 1,
+          }}>×</button>
+        </div>
+        <video ref={videoRef} muted playsInline style={{ width: "100%", minHeight: "280px", background: "#000", display: "block" }} />
+        {loading && !error && (
+          <div style={{
+            padding: "16px", textAlign: "center",
+            fontSize: "11px", color: p.textMuted, letterSpacing: "0.5px",
+            fontFamily: "'IBM Plex Mono', monospace",
+          }}>
+            Starting camera…
+          </div>
+        )}
+        {error && (
+          <div style={{
+            padding: "16px", textAlign: "center",
+            fontSize: "12px", color: "#e55", letterSpacing: "0.5px",
+            fontFamily: "'IBM Plex Mono', monospace",
+          }}>
+            {error}
+          </div>
+        )}
+        {!error && (
+          <div style={{
+            padding: "12px 16px", textAlign: "center",
+            fontSize: "11px", color: p.textFaint, letterSpacing: "0.5px",
+            fontFamily: "'IBM Plex Mono', monospace",
+          }}>
+            Point your camera at a barcode or QR code
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AlphabetSoup() {
   const systemDark = useSystemDark();
   const isWide     = useIsWide();
@@ -181,6 +357,9 @@ export default function AlphabetSoup() {
   const [verboseSymbols,  setVerboseSymbols]  = usePersisted("as_verbose_symbols",   false);
 
   const [input,     setInput]     = useState("");
+  const [showScanner, setShowScanner] = useState(false);
+  const isTouchDevice = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 0 && /MacIntel/.test(navigator.platform) && !window.MSStream);
   const [newLetter, setNewLetter] = useState("");
   const [newWord,      setNewWord]      = useState("");
   const [activeTab,    setActiveTab]    = useState("parse");
@@ -453,17 +632,49 @@ export default function AlphabetSoup() {
               {/* Input */}
               <div style={{ marginBottom: "24px" }}>
                 <label style={labelStyle}>Input String</label>
-                <textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Paste or type your string ..."
-                  rows={2}
-                  style={{
-                    ...inputStyle, width: "100%", resize: "vertical",
-                    fontSize: "16px", lineHeight: "1.6", fontFamily: font,
-                  }}
-                />
+                <div style={{ position: "relative" }}>
+                  <textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Paste or type your string ..."
+                    rows={2}
+                    style={{
+                      ...inputStyle, width: "100%", resize: "vertical",
+                      fontSize: "16px", lineHeight: "1.6", fontFamily: font,
+                      paddingRight: isTouchDevice ? "52px" : "16px",
+                    }}
+                  />
+                  {isTouchDevice && (
+                    <button
+                      onClick={() => setShowScanner(true)}
+                      title="Scan barcode"
+                      style={{
+                        position: "absolute", right: "8px", top: "8px",
+                        width: "38px", height: "38px",
+                        background: `${activeColors.nato}18`,
+                        border: `1px solid ${activeColors.nato}55`,
+                        borderRadius: "6px", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: "18px", lineHeight: 1,
+                        transition: "background 0.2s",
+                      }}
+                    >
+                      📷
+                    </button>
+                  )}
+                </div>
               </div>
+              {showScanner && (
+                <BarcodeScanner
+                  p={p}
+                  accentColor={activeColors.nato}
+                  onScan={(text) => {
+                    setInput((prev) => prev ? prev + "\n" + text : text);
+                    setShowScanner(false);
+                  }}
+                  onClose={() => setShowScanner(false)}
+                />
+              )}
 
               {/* Legend */}
               <div style={{ display: "flex", gap: "20px", flexWrap: "wrap", marginBottom: "16px" }}>
