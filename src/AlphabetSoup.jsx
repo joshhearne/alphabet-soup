@@ -24,6 +24,10 @@ const SYMBOL_NAMES = {
   ">": "Greater-Than", ",": "Comma", "'": "Apostrophe", '"': "Quote",
   " ": "Space", "^": "Caret", "`": "Backtick", "~": "Tilde",
   "{": "Open-Brace", "}": "Close-Brace", "|": "Pipe",
+  "\u2018": "Apostrophe", "\u2019": "Apostrophe",
+  "\u201C": "Quote", "\u201D": "Quote",
+  "\u20AC": "Euro", "\u00A3": "Pound-Sterling", "\u00A5": "Yen",
+  "\u2022": "Bullet",
 };
 
 const FONTS = [
