@@ -171,96 +171,41 @@ function ThemeSelector({ value, onChange, accentColor, p }) {
   );
 }
 
-function BarcodeScanner({ onScan, onClose, p, accentColor }) {
+function BarcodeScanner({ active, onScan, onClose, p, accentColor }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const onScanRef = useRef(onScan);
+  const scanTimerRef = useRef(null);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
 
+  useEffect(() => { onScanRef.current = onScan; }, [onScan]);
+
+  // Acquire camera on first activation, keep stream alive across open/close
   useEffect(() => {
+    if (!active) return;
+    if (streamRef.current) return; // already have a stream
+    setHasOpened(true);
+    setLoading(true);
+    setError(null);
     let cancelled = false;
-    let animId;
 
     (async () => {
       try {
         if (!navigator.mediaDevices?.getUserMedia) {
           throw new Error("Camera not available. Requires HTTPS.");
         }
-
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" },
         });
         if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
         streamRef.current = stream;
-
         const video = videoRef.current;
         video.srcObject = stream;
         video.setAttribute("playsinline", "true");
         await video.play();
         if (!cancelled) setLoading(false);
-
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-
-        const hasBD = "BarcodeDetector" in window;
-        let supportedFormats = [];
-        if (hasBD) {
-          try { supportedFormats = await BarcodeDetector.getSupportedFormats(); } catch (_) {}
-        }
-
-        if (hasBD && supportedFormats.length > 0) {
-          const detector = new BarcodeDetector({ formats: supportedFormats });
-          const scan = () => {
-            if (cancelled || !video.videoWidth) {
-              animId = requestAnimationFrame(scan);
-              return;
-            }
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            detector.detect(canvas).then((barcodes) => {
-              if (cancelled) return;
-              if (barcodes.length > 0) {
-                stream.getTracks().forEach((t) => t.stop());
-                onScan(barcodes[0].rawValue);
-              } else {
-                animId = requestAnimationFrame(scan);
-              }
-            }).catch(() => {
-              if (!cancelled) animId = requestAnimationFrame(scan);
-            });
-          };
-          animId = requestAnimationFrame(scan);
-        } else {
-          const { readBarcodesFromImageData } = await import("zxing-wasm/reader");
-          if (cancelled) return;
-          const scan = () => {
-            if (cancelled || !video.videoWidth) {
-              animId = requestAnimationFrame(scan);
-              return;
-            }
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            readBarcodesFromImageData(imageData, {
-              tryHarder: true,
-              formats: ["QRCode", "EAN-13", "EAN-8", "Code128", "Code39",
-                        "UPC-A", "UPC-E", "ITF", "Codabar", "DataMatrix"],
-            }).then((results) => {
-              if (cancelled) return;
-              if (results.length > 0 && results[0].text) {
-                stream.getTracks().forEach((t) => t.stop());
-                onScan(results[0].text);
-              } else {
-                animId = requestAnimationFrame(scan);
-              }
-            }).catch(() => {
-              if (!cancelled) animId = requestAnimationFrame(scan);
-            });
-          };
-          animId = requestAnimationFrame(scan);
-        }
       } catch (err) {
         if (!cancelled) {
           const msg = err?.message || String(err);
@@ -276,18 +221,102 @@ function BarcodeScanner({ onScan, onClose, p, accentColor }) {
       }
     })();
 
+    return () => { cancelled = true; };
+  }, [active]);
+
+  // Scan loop — runs only when active and stream is ready
+  useEffect(() => {
+    if (!active || !streamRef.current || error) return;
+    let cancelled = false;
+    let timerId;
+
+    (async () => {
+      const video = videoRef.current;
+      if (!video) return;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+      const hasBD = "BarcodeDetector" in window;
+      let supportedFormats = [];
+      if (hasBD) {
+        try { supportedFormats = await BarcodeDetector.getSupportedFormats(); } catch (_) {}
+      }
+
+      const SCAN_INTERVAL = 300;
+
+      if (hasBD && supportedFormats.length > 0) {
+        const detector = new BarcodeDetector({ formats: supportedFormats });
+        const scan = () => {
+          if (cancelled || !video.videoWidth) {
+            timerId = setTimeout(scan, SCAN_INTERVAL);
+            return;
+          }
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
+          detector.detect(canvas).then((barcodes) => {
+            if (cancelled) return;
+            if (barcodes.length > 0) {
+              onScanRef.current(barcodes[0].rawValue);
+            } else {
+              timerId = setTimeout(scan, SCAN_INTERVAL);
+            }
+          }).catch(() => {
+            if (!cancelled) timerId = setTimeout(scan, SCAN_INTERVAL);
+          });
+        };
+        timerId = setTimeout(scan, SCAN_INTERVAL);
+      } else {
+        const { readBarcodesFromImageData } = await import("zxing-wasm/reader");
+        if (cancelled) return;
+        const scan = () => {
+          if (cancelled || !video.videoWidth) {
+            timerId = setTimeout(scan, SCAN_INTERVAL);
+            return;
+          }
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          readBarcodesFromImageData(imageData, {
+            tryHarder: true,
+            formats: ["QRCode", "EAN-13", "EAN-8", "Code128", "Code39",
+                      "UPC-A", "UPC-E", "ITF", "Codabar", "DataMatrix"],
+          }).then((results) => {
+            if (cancelled) return;
+            if (results.length > 0 && results[0].text) {
+              onScanRef.current(results[0].text);
+            } else {
+              timerId = setTimeout(scan, SCAN_INTERVAL);
+            }
+          }).catch(() => {
+            if (!cancelled) timerId = setTimeout(scan, SCAN_INTERVAL);
+          });
+        };
+        timerId = setTimeout(scan, SCAN_INTERVAL);
+      }
+    })();
+
     return () => {
       cancelled = true;
-      if (animId) cancelAnimationFrame(animId);
+      if (timerId) clearTimeout(timerId);
+    };
+  }, [active, loading, error]);
+
+  // Stop stream on unmount only
+  useEffect(() => {
+    return () => {
       if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
     };
   }, []);
+
+  if (!active && !hasOpened) return null;
 
   return (
     <div style={{
       position: "fixed", inset: 0, zIndex: 200,
       background: "rgba(0,0,0,0.85)",
-      display: "flex", flexDirection: "column",
+      display: active ? "flex" : "none", flexDirection: "column",
       alignItems: "center", justifyContent: "center",
       padding: "16px",
     }}>
@@ -668,8 +697,9 @@ export default function AlphabetSoup() {
                   )}
                 </div>
               </div>
-              {showScanner && (
+              {isTouchDevice && (
                 <BarcodeScanner
+                  active={showScanner}
                   p={p}
                   accentColor={activeColors.nato}
                   onScan={(text) => {
