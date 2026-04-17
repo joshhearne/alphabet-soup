@@ -690,7 +690,7 @@ export default function AlphabetSoup() {
                   />
                   {isTouchDevice && (
                     <button
-                      onClick={() => setShowScanner(true)}
+                      onClick={() => { setInput(""); setShowScanner(true); }}
                       title="Scan barcode"
                       style={{
                         position: "absolute", right: "8px", top: "8px",
@@ -713,7 +713,7 @@ export default function AlphabetSoup() {
                   p={p}
                   accentColor={activeColors.nato}
                   onScan={(text) => {
-                    setInput((prev) => prev ? prev + "\n" + text : text);
+                    setInput(text);
                     setShowScanner(false);
                   }}
                   onClose={() => setShowScanner(false)}
