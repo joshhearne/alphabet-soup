@@ -175,138 +175,158 @@ function BarcodeScanner({ active, onScan, onClose, p, accentColor }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const onScanRef = useRef(onScan);
-  const scanTimerRef = useRef(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
 
   useEffect(() => { onScanRef.current = onScan; }, [onScan]);
 
-  // Acquire camera on first activation, keep stream alive across open/close
+  // Single effect per open: acquire (or reuse) stream, attach to video, run scan loop.
+  // Reuses the existing stream when its tracks are still live so the browser
+  // permission prompt does not reappear on subsequent opens.
   useEffect(() => {
     if (!active) return;
-    if (streamRef.current) return; // already have a stream
     setHasOpened(true);
-    setLoading(true);
-    setError(null);
-    let cancelled = false;
 
-    (async () => {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error("Camera not available. Requires HTTPS.");
-        }
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        });
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
-        streamRef.current = stream;
-        const video = videoRef.current;
-        video.srcObject = stream;
-        video.setAttribute("playsinline", "true");
-        await video.play();
-        if (!cancelled) setLoading(false);
-      } catch (err) {
-        if (!cancelled) {
-          const msg = err?.message || String(err);
-          if (msg.includes("NotAllowedError") || msg.includes("Permission")) {
-            setError("Camera access denied. Check browser permissions.");
-          } else if (msg.includes("NotFoundError") || msg.includes("no camera")) {
-            setError("No camera found on this device.");
-          } else {
-            setError("Could not start camera: " + msg);
-          }
-          setLoading(false);
-        }
+    let cancelled = false;
+    let rafId = 0;
+
+    const ensureStream = async () => {
+      const existing = streamRef.current;
+      if (existing && existing.getTracks().every((t) => t.readyState === "live")) {
+        return existing;
       }
-    })();
+      if (existing) {
+        existing.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera not available. Requires HTTPS.");
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+      });
+      streamRef.current = stream;
+      return stream;
+    };
 
-    return () => { cancelled = true; };
-  }, [active]);
-
-  // Scan loop — runs only when active and stream is ready
-  useEffect(() => {
-    if (!active || !streamRef.current || error) return;
-    let cancelled = false;
-    let timerId;
-
-    (async () => {
-      const video = videoRef.current;
-      if (!video) return;
+    const runScanLoop = async (video) => {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
 
-      const hasBD = "BarcodeDetector" in window;
-      let supportedFormats = [];
-      if (hasBD) {
-        try { supportedFormats = await BarcodeDetector.getSupportedFormats(); } catch (_) {}
+      let detector = null;
+      let zxingRead = null;
+
+      if ("BarcodeDetector" in window) {
+        try {
+          const supported = await BarcodeDetector.getSupportedFormats();
+          if (!cancelled && supported.length > 0) {
+            detector = new BarcodeDetector({ formats: supported });
+          }
+        } catch (_) { /* fall through to zxing */ }
+      }
+      if (cancelled) return;
+      if (!detector) {
+        try {
+          const mod = await import("zxing-wasm/reader");
+          if (cancelled) return;
+          zxingRead = mod.readBarcodes || mod.readBarcodesFromImageData;
+        } catch (_) {
+          if (!cancelled) setError("Could not load barcode reader.");
+          return;
+        }
       }
 
-      const SCAN_INTERVAL = 300;
+      const ZXING_FORMATS = [
+        "QRCode", "EAN13", "EAN8", "Code128", "Code39",
+        "UPCA", "UPCE", "ITF", "Codabar", "DataMatrix", "PDF417", "Aztec",
+      ];
+      const SCAN_INTERVAL = 250;
+      let lastScan = 0;
+      let busy = false;
 
-      if (hasBD && supportedFormats.length > 0) {
-        const detector = new BarcodeDetector({ formats: supportedFormats });
-        const scan = () => {
-          if (cancelled || !video.videoWidth) {
-            timerId = setTimeout(scan, SCAN_INTERVAL);
-            return;
-          }
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0);
-          detector.detect(canvas).then((barcodes) => {
-            if (cancelled) return;
-            if (barcodes.length > 0) {
-              onScanRef.current(barcodes[0].rawValue);
-            } else {
-              timerId = setTimeout(scan, SCAN_INTERVAL);
-            }
-          }).catch(() => {
-            if (!cancelled) timerId = setTimeout(scan, SCAN_INTERVAL);
-          });
-        };
-        timerId = setTimeout(scan, SCAN_INTERVAL);
-      } else {
-        const { readBarcodesFromImageData } = await import("zxing-wasm/reader");
+      const tick = async (ts) => {
         if (cancelled) return;
-        const scan = () => {
-          if (cancelled || !video.videoWidth) {
-            timerId = setTimeout(scan, SCAN_INTERVAL);
-            return;
-          }
+        if (busy || !video.videoWidth || video.readyState < 2 ||
+            ts - lastScan < SCAN_INTERVAL) {
+          rafId = requestAnimationFrame(tick);
+          return;
+        }
+        lastScan = ts;
+        busy = true;
+        try {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
           ctx.drawImage(video, 0, 0);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          readBarcodesFromImageData(imageData, {
-            tryHarder: true,
-            formats: ["QRCode", "EAN-13", "EAN-8", "Code128", "Code39",
-                      "UPC-A", "UPC-E", "ITF", "Codabar", "DataMatrix"],
-          }).then((results) => {
-            if (cancelled) return;
-            if (results.length > 0 && results[0].text) {
-              onScanRef.current(results[0].text);
-            } else {
-              timerId = setTimeout(scan, SCAN_INTERVAL);
+          if (detector) {
+            const codes = await detector.detect(canvas);
+            if (!cancelled && codes.length > 0 && codes[0].rawValue) {
+              onScanRef.current(codes[0].rawValue);
+              return;
             }
-          }).catch(() => {
-            if (!cancelled) timerId = setTimeout(scan, SCAN_INTERVAL);
-          });
-        };
-        timerId = setTimeout(scan, SCAN_INTERVAL);
+          } else {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const results = await zxingRead(imageData, {
+              tryHarder: true,
+              tryRotate: true,
+              tryInvert: true,
+              formats: ZXING_FORMATS,
+            });
+            if (!cancelled) {
+              const hit = results.find((r) => r.isValid && r.text);
+              if (hit) { onScanRef.current(hit.text); return; }
+            }
+          }
+        } catch (_) { /* keep scanning */ }
+        finally { busy = false; }
+        if (!cancelled) rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+    };
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const stream = await ensureStream();
+        if (cancelled) return;
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.srcObject !== stream) video.srcObject = stream;
+        video.setAttribute("playsinline", "true");
+        video.muted = true;
+        try { await video.play(); } catch (_) { /* element may still produce frames */ }
+        if (cancelled) return;
+        setLoading(false);
+        runScanLoop(video);
+      } catch (err) {
+        if (cancelled) return;
+        const name = err?.name || "";
+        const msg = err?.message || String(err);
+        if (name === "NotAllowedError" || name === "SecurityError") {
+          setError("Camera access denied. Check browser permissions.");
+        } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+          setError("No camera found on this device.");
+        } else {
+          setError("Could not start camera: " + msg);
+        }
+        setLoading(false);
       }
     })();
 
     return () => {
       cancelled = true;
-      if (timerId) clearTimeout(timerId);
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [active, loading, error]);
+  }, [active]);
 
-  // Stop stream on unmount only
+  // Stop stream on full unmount only — keeps permission alive across open/close
   useEffect(() => {
     return () => {
-      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
     };
   }, []);
 
