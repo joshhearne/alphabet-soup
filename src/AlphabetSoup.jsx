@@ -1177,7 +1177,7 @@ export default function AlphabetSoup() {
           {activeTab === "downloads" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "28px", width: "100%" }}>
 
-              {/* Chrome Extension hero card */}
+              {/* Browser Extension hero card */}
               <div style={{
                 padding: "28px 32px",
                 background: p.bgSecondary,
@@ -1195,32 +1195,67 @@ export default function AlphabetSoup() {
                     fontSize: "18px", fontWeight: "800", letterSpacing: "-0.3px",
                     marginBottom: "6px",
                   }}>
-                    AlphabetSoup for Chrome
+                    AlphabetSoup browser extension
                   </div>
                   <div style={{ fontSize: "13px", color: p.textMuted, lineHeight: "1.8", marginBottom: "16px" }}>
                     Highlight any text on any webpage, right-click, and instantly read back the phonetic
                     spelling — without leaving the page. The extension brings AlphabetSoup to wherever
                     you're already working.
                   </div>
-                  <a
-                    href="https://chromewebstore.google.com/detail/alphabetsoup/loekomefinlhckgbbnbfhibnogapoigo"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
+                    <a
+                      href="https://chromewebstore.google.com/detail/alphabetsoup/loekomefinlhckgbbnbfhibnogapoigo"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "8px",
+                        padding: "10px 20px",
+                        background: activeColors.nato,
+                        color: "#fff", borderRadius: "6px",
+                        fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                        textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
+                        transition: "opacity 0.2s",
+                      }}
+                      onMouseOver={e => e.currentTarget.style.opacity = "0.85"}
+                      onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                    >
+                      <span>Add to Chrome</span>
+                      <span style={{ fontSize: "14px" }}>→</span>
+                    </a>
+                    <a
+                      href="https://addons.mozilla.org/en-US/firefox/addon/alphabetsoup/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "8px",
+                        padding: "10px 20px",
+                        background: "transparent",
+                        color: activeColors.nato,
+                        border: `1px solid ${activeColors.nato}`,
+                        borderRadius: "6px",
+                        fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                        textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
+                        transition: "opacity 0.2s",
+                      }}
+                      onMouseOver={e => e.currentTarget.style.opacity = "0.75"}
+                      onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                    >
+                      <span>Add to Firefox</span>
+                      <span style={{ fontSize: "14px" }}>→</span>
+                    </a>
+                    <span style={{
                       display: "inline-flex", alignItems: "center", gap: "8px",
-                      padding: "10px 20px",
-                      background: activeColors.nato,
-                      color: "#fff", borderRadius: "6px",
-                      fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
-                      textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
-                      transition: "opacity 0.2s",
-                    }}
-                    onMouseOver={e => e.currentTarget.style.opacity = "0.85"}
-                    onMouseOut={e => e.currentTarget.style.opacity = "1"}
-                  >
-                    <span>Add to Chrome</span>
-                    <span style={{ fontSize: "14px" }}>→</span>
-                  </a>
+                      padding: "10px 16px",
+                      background: `${p.textMuted}15`,
+                      color: p.textMuted,
+                      border: `1px dashed ${p.textMuted}55`,
+                      borderRadius: "6px",
+                      fontSize: "11px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                      fontFamily: "'IBM Plex Mono', monospace",
+                    }}>
+                      Edge — coming soon
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1266,18 +1301,19 @@ export default function AlphabetSoup() {
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
                     <span style={{ fontSize: "18px" }}>🔄</span>
                     <span style={{ fontSize: "13px", fontWeight: "700", color: p.text }}>
-                      Export from here, import in the extension — coming in v1.1.0
+                      Export from here, import in the extension — live now
                     </span>
                   </div>
                   <div style={{ fontSize: "12px", color: p.textMuted, lineHeight: "1.8" }}>
                     AlphabetSoup uses a portable{" "}
                     <span style={{ color: activeColors.custom }}>settings.json</span> format so your custom
                     words, color theme, font, and preferences can travel with you. Export your settings from
-                    the Colors &amp; Fonts tab here on the web app, and import them directly into the Chrome
+                    the Colors &amp; Fonts tab here on the web app, and import them directly into the
                     extension — or vice versa. No account required.
                     <br /><br />
-                    Full export/import support is already live in the web app. Extension parity is coming
-                    in the <span style={{ color: activeColors.nato }}>v1.1.0</span> extension update.
+                    Full export/import support is live across the web app and the Chrome and Firefox
+                    extensions. Microsoft Edge support is{" "}
+                    <span style={{ color: activeColors.nato }}>coming soon</span>.
                   </div>
                 </div>
               </div>

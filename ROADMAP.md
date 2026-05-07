@@ -56,23 +56,28 @@ Target: environments where the desktop app can’t be installed but browser exte
 are permitted. MSP techs, helpdesk, dispatch — anyone working in a browser-heavy
 workflow (PSA tools, web ticketing, vendor portals).
 
+**Status:** Firefox v1.1.0 released, Chrome v1.2.1 released, Edge release pending.
+Once Edge ships, all three will be version-bumped to v1.2.2 to align.
+
 ### Core
 
-- [ ] Right-click any highlighted text on any webpage → “Read back with AlphabetSoup”
-- [ ] Popup panel showing parsed result inline — no tab switch required
-- [ ] Toolbar button opens full parser panel (same UI as web app)
+- [x] Right-click any highlighted text on any webpage → “Read back with AlphabetSoup”
+- [x] Popup panel showing parsed result inline — no tab switch required
+- [x] Toolbar button opens full parser panel (same UI as web app)
 
 ### Settings Sync
 
-- [ ] Custom words, verbose toggles, colors, and font stored in extension storage
+- [x] Custom words, verbose toggles, colors, and font stored in extension storage
 - [ ] Optional: sync settings across browsers/devices via browser account sync
-- [ ] Settings UI embedded in extension popup — no need to visit alphabetsoup.app
+- [x] Settings UI embedded in extension popup — no need to visit alphabetsoup.app
 
 ### Distribution
 
-- [ ] Chrome Web Store (covers Chrome + Edge via Chromium)
-- [ ] Firefox Add-ons (Mozilla AMO)
-- [ ] Manifest V3 compliant (required for Chrome/Edge going forward)
+- [x] Chrome Web Store (Chrome v1.2.1 live)
+- [x] Firefox Add-ons / Mozilla AMO (v1.1.0 live)
+- [ ] Microsoft Edge Add-ons (pending review)
+- [x] Manifest V3 compliant (required for Chrome/Edge going forward)
+- [ ] Catch-up release: bump all three to v1.2.2 once Edge ships
 
 ### Notes
 
