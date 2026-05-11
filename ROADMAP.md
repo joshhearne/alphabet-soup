@@ -56,8 +56,8 @@ Target: environments where the desktop app can’t be installed but browser exte
 are permitted. MSP techs, helpdesk, dispatch — anyone working in a browser-heavy
 workflow (PSA tools, web ticketing, vendor portals).
 
-**Status:** Firefox v1.1.0 released, Chrome v1.2.1 released, Edge release pending.
-Once Edge ships, all three will be version-bumped to v1.2.2 to align.
+**Status:** Firefox v1.1.0 released, Chrome v1.2.1 released, Edge live on
+Microsoft Edge Add-ons. Catch-up release to align all three on v1.2.2 still pending.
 
 ### Core
 
@@ -75,7 +75,7 @@ Once Edge ships, all three will be version-bumped to v1.2.2 to align.
 
 - [x] Chrome Web Store (Chrome v1.2.1 live)
 - [x] Firefox Add-ons / Mozilla AMO (v1.1.0 live)
-- [ ] Microsoft Edge Add-ons (pending review)
+- [x] Microsoft Edge Add-ons (live)
 - [x] Manifest V3 compliant (required for Chrome/Edge going forward)
 - [ ] Catch-up release: bump all three to v1.2.2 once Edge ships
 
