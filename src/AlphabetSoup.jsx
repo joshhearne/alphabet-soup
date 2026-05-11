@@ -1243,18 +1243,27 @@ export default function AlphabetSoup() {
                       <span>Add to Firefox</span>
                       <span style={{ fontSize: "14px" }}>→</span>
                     </a>
-                    <span style={{
-                      display: "inline-flex", alignItems: "center", gap: "8px",
-                      padding: "10px 16px",
-                      background: `${p.textMuted}15`,
-                      color: p.textMuted,
-                      border: `1px dashed ${p.textMuted}55`,
-                      borderRadius: "6px",
-                      fontSize: "11px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
-                      fontFamily: "'IBM Plex Mono', monospace",
-                    }}>
-                      Edge — coming soon
-                    </span>
+                    <a
+                      href="https://microsoftedge.microsoft.com/addons/detail/alphabetsoup/iahpcfkahihmcleokhhgcilbdonehcko"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: "8px",
+                        padding: "10px 20px",
+                        background: "transparent",
+                        color: activeColors.nato,
+                        border: `1px solid ${activeColors.nato}`,
+                        borderRadius: "6px",
+                        fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                        textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
+                        transition: "opacity 0.2s",
+                      }}
+                      onMouseOver={e => e.currentTarget.style.opacity = "0.75"}
+                      onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                    >
+                      <span>Add to Edge</span>
+                      <span style={{ fontSize: "14px" }}>→</span>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -1311,9 +1320,8 @@ export default function AlphabetSoup() {
                     the Colors &amp; Fonts tab here on the web app, and import them directly into the
                     extension — or vice versa. No account required.
                     <br /><br />
-                    Full export/import support is live across the web app and the Chrome and Firefox
-                    extensions. Microsoft Edge support is{" "}
-                    <span style={{ color: activeColors.nato }}>coming soon</span>.
+                    Full export/import support is live across the web app and the Chrome, Firefox,
+                    and Microsoft Edge extensions.
                   </div>
                 </div>
               </div>
