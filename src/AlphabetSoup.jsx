@@ -79,6 +79,29 @@ function parseString(input, customWords, suppressCustom) {
   });
 }
 
+function detectDesktopBrowser() {
+  if (typeof navigator === "undefined") return null;
+  const ua = navigator.userAgent || "";
+  const uaData = navigator.userAgentData;
+  const isMobile = uaData?.mobile ?? /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+  if (isMobile) return null;
+  if (uaData?.brands?.length) {
+    const brands = uaData.brands.map(b => b.brand.toLowerCase());
+    if (brands.some(b => b.includes("edge"))) return "edge";
+    if (brands.some(b => b.includes("firefox"))) return "firefox";
+    if (brands.some(b => b.includes("chrome") || b.includes("chromium"))) return "chrome";
+  }
+  if (/Edg\//.test(ua)) return "edge";
+  if (/Firefox\//.test(ua)) return "firefox";
+  if (/Chrome\//.test(ua) && !/OPR\/|Brave\//.test(ua)) return "chrome";
+  return null;
+}
+
+function useDesktopBrowser() {
+  const [b] = useState(() => detectDesktopBrowser());
+  return b;
+}
+
 function useIsWide(breakpoint = 1024) {
   const [isWide, setIsWide] = useState(() => window.innerWidth >= breakpoint);
   useEffect(() => {
@@ -389,6 +412,7 @@ function BarcodeScanner({ onScan, onClose, p, accentColor }) {
 export default function AlphabetSoup() {
   const systemDark = useSystemDark();
   const isWide     = useIsWide();
+  const userBrowser = useDesktopBrowser();
 
   const [themePreference, setThemePreference] = usePersisted("as_theme",            "system");
   const [font,            setFont]            = usePersisted("as_font",              FONTS[0].value);
@@ -1203,67 +1227,43 @@ export default function AlphabetSoup() {
                     you're already working.
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
-                    <a
-                      href="https://chromewebstore.google.com/detail/alphabetsoup/loekomefinlhckgbbnbfhibnogapoigo"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: "8px",
-                        padding: "10px 20px",
-                        background: activeColors.nato,
-                        color: "#fff", borderRadius: "6px",
-                        fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
-                        textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
-                        transition: "opacity 0.2s",
-                      }}
-                      onMouseOver={e => e.currentTarget.style.opacity = "0.85"}
-                      onMouseOut={e => e.currentTarget.style.opacity = "1"}
-                    >
-                      <span>Add to Chrome</span>
-                      <span style={{ fontSize: "14px" }}>→</span>
-                    </a>
-                    <a
-                      href="https://addons.mozilla.org/en-US/firefox/addon/alphabetsoup/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: "8px",
-                        padding: "10px 20px",
-                        background: "transparent",
-                        color: activeColors.nato,
-                        border: `1px solid ${activeColors.nato}`,
-                        borderRadius: "6px",
-                        fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
-                        textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
-                        transition: "opacity 0.2s",
-                      }}
-                      onMouseOver={e => e.currentTarget.style.opacity = "0.75"}
-                      onMouseOut={e => e.currentTarget.style.opacity = "1"}
-                    >
-                      <span>Add to Firefox</span>
-                      <span style={{ fontSize: "14px" }}>→</span>
-                    </a>
-                    <a
-                      href="https://microsoftedge.microsoft.com/addons/detail/alphabetsoup/iahpcfkahihmcleokhhgcilbdonehcko"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: "8px",
-                        padding: "10px 20px",
-                        background: "transparent",
-                        color: activeColors.nato,
-                        border: `1px solid ${activeColors.nato}`,
-                        borderRadius: "6px",
-                        fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
-                        textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
-                        transition: "opacity 0.2s",
-                      }}
-                      onMouseOver={e => e.currentTarget.style.opacity = "0.75"}
-                      onMouseOut={e => e.currentTarget.style.opacity = "1"}
-                    >
-                      <span>Add to Edge</span>
-                      <span style={{ fontSize: "14px" }}>→</span>
-                    </a>
+                    {(() => {
+                      const browsers = [
+                        { key: "chrome",  label: "Add to Chrome",  href: "https://chromewebstore.google.com/detail/alphabetsoup/loekomefinlhckgbbnbfhibnogapoigo" },
+                        { key: "firefox", label: "Add to Firefox", href: "https://addons.mozilla.org/en-US/firefox/addon/alphabetsoup/" },
+                        { key: "edge",    label: "Add to Edge",    href: "https://microsoftedge.microsoft.com/addons/detail/alphabetsoup/iahpcfkahihmcleokhhgcilbdonehcko" },
+                      ];
+                      const ordered = userBrowser
+                        ? [...browsers].sort((a, b) => (a.key === userBrowser ? -1 : b.key === userBrowser ? 1 : 0))
+                        : browsers;
+                      return ordered.map(({ key, label, href }) => {
+                        const primary = userBrowser === key;
+                        return (
+                          <a
+                            key={key}
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: "8px",
+                              padding: "10px 20px",
+                              background: primary ? activeColors.nato : "transparent",
+                              color: primary ? "#fff" : activeColors.nato,
+                              border: primary ? "1px solid transparent" : `1px solid ${activeColors.nato}`,
+                              borderRadius: "6px",
+                              fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                              textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
+                              transition: "opacity 0.2s",
+                            }}
+                            onMouseOver={e => e.currentTarget.style.opacity = primary ? "0.85" : "0.75"}
+                            onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                          >
+                            <span>{label}</span>
+                            <span style={{ fontSize: "14px" }}>→</span>
+                          </a>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               </div>
