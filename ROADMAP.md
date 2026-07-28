@@ -83,6 +83,45 @@ Not on the original roadmap — added because desk techs have the labels in hand
 - [x] Preview mirror toggle — cosmetic only, never affects decoding
 - [ ] OCR on printed text — same best-effort caveat as the mobile roadmap
 
+### Scanning list mode
+
+Inverts the current flow. Instead of one scan filling one input, the camera or
+USB scanner stays live and accumulates a list, which is then reviewed and parsed
+as a queue. The batch equivalent of File Import, for when the strings are on
+labels in front of you rather than in a file.
+
+Wanted on desktop and on mobile, sharing the same interaction model.
+
+Capture:
+
+- [ ] Camera stays open across multiple scans rather than closing on the first hit
+- [ ] Confirmation on each successful scan: screen or window flash plus a beep,
+      so it registers without watching the display
+- [ ] 2–3 second lockout after a hit, so the same label is not read twice while
+      still in frame
+- [ ] Push-to-scan, spacebar by default, mirroring push-to-talk. The camera only
+      decodes while held, which makes duplicate suppression mostly unnecessary and
+      keeps the camera idle the rest of the time
+- [ ] USB scanners feed the same list, no camera involved
+
+Review, before anything is parsed:
+
+- [ ] Show the accumulated list with duplicates flagged
+- [ ] Offer to deduplicate, with the count of what would be removed
+- [ ] Export the list as `.txt` or `.csv`
+- [ ] Hand off to the existing queue for readback
+
+### Shareable readback sheet
+
+Today the readback is on-screen only. A printable, shareable version so a tech
+can hand over or file the breakdown.
+
+- [ ] Print-friendly layout: colour-coded on white, legible on a monochrome
+      printer (so type is distinguished by more than hue alone)
+- [ ] Share or export from mobile as well as desktop
+- [ ] Candidate for the paid tier — a concrete deliverable rather than a gate on
+      core functionality
+
 ### Settings
 
 - [x] Full parity with the web app and extensions — same keys, same defaults
