@@ -48,7 +48,8 @@ rewritten.
 - [x] `alphabetsoup://readback?text=…` deep link — the scriptable entry point for
       AutoHotkey, a Linux keybinding, or Automator
 - [ ] macOS: Services menu item — needs a small Automator shim that calls the deep
-      link, since Electron cannot receive `NSService` messages itself
+      link, since Electron cannot receive `NSService` messages itself. Detail in
+      the macOS build section below
 
 Not achievable, recorded so they stop being re-litigated:
 
@@ -92,9 +93,47 @@ Not on the original roadmap — added because desk techs have the labels in hand
 ### Distribution
 
 - [x] Windows: NSIS installer + portable exe
-- [x] Linux: AppImage + deb
-- [ ] macOS: dmg + zip — needs a Mac to build and sign
+- [x] Linux: AppImage + deb + rpm (Fedora / RHEL / openSUSE)
+- [x] Releases built and attached automatically by CI on a version tag, as a
+      draft for review before publishing
+- [ ] macOS: dmg + zip — see below
 - [ ] Code signing — Windows Authenticode, macOS notarization
+- [ ] `winget` manifest, so corporate Windows desktops can `winget install`
+      (wants a signed installer first)
+
+### macOS build
+
+Everything below is written and waiting; none of it has run, because none of it
+can run without a Mac.
+
+What already exists in the repo:
+
+- The `mac` target block in `electron-builder.yml`: dmg and zip, the utilities
+  category, `NSCameraUsageDescription`, and `NSAppleEventsUsageDescription` for
+  the Cmd+C round trip the hotkey uses
+- A `macos-latest` entry in the CI matrix, commented out
+- The `alphabetsoup://readback?text=` deep link the Services entry will call
+- Selection capture via `osascript`, written but never exercised
+
+What is needed:
+
+- [ ] A Mac to build on. Apple Silicon and Intel are separate artifacts unless a
+      universal binary is built
+- [ ] Apple Developer Program membership, for the Developer ID certificate
+- [ ] Notarization, or Gatekeeper blocks the app on first launch. Needs an app
+      specific password or an App Store Connect API key as CI secrets
+- [ ] The Automator Quick Action that feeds selected text to the deep link.
+      Declaring `NSServices` in the Info.plist is not enough on its own: Electron
+      cannot receive an NSService message, so the "Read back with AlphabetSoup"
+      menu item has to be a shim that opens the URL. It needs shipping and
+      installing alongside the app, which is the one genuinely unsolved piece
+- [ ] Accessibility permission prompt handling. Synthesising Cmd+C needs the app
+      trusted under Privacy & Security → Accessibility, and the first-run
+      experience for that is unwritten
+- [ ] Uncomment the CI matrix entry once the signing secrets exist
+
+Worth knowing before starting: `macos-latest` runner minutes bill at ten times
+the Linux rate on private repos. The repo is public, so this is free for now.
 
 -----
 
