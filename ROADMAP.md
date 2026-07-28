@@ -8,45 +8,93 @@ Current production version. Feature complete for v1.
 
 -----
 
-## Desktop App (Tauri — Windows / macOS / Linux)
+## Desktop App (Electron — Windows / Linux live, macOS pending)
 
 Reuses existing React UI. Target: desk technicians on phone calls with vendors/support.
 
+**Status:** v1 built in `~/dev/alphabetsoup-desktop`. Windows (NSIS + portable) and
+Linux (AppImage + deb) installers building.
+
+**Framework note:** Electron rather than Tauri for v1. WebKitGTK's `getUserMedia`
+is unreliable on Linux and webcam scanning is a core feature, and Tauri cannot
+cross-build a Windows `.exe` from Linux. Revisitable — the React UI ports over
+unchanged; only the main-process layer (tray, hotkey, clipboard, dialogs) would be
+rewritten.
+
 ### Core
 
-- [ ] System tray icon — always one click away, no browser needed
-- [ ] Global hotkey to open/focus from any application
+- [x] System tray icon — always one click away, no browser needed
+- [x] Global hotkey to open/focus from any application (`Alt+Shift+S`, rebindable)
+- [x] Close to tray, with a first-run notice so the window doesn't appear to vanish
+- [ ] Launch at login — works on Windows/macOS; Linux still needs a `.desktop` autostart entry
+- [ ] Auto-updater
 
 ### Clipboard
 
+- [x] Paste button — reads clipboard directly, no permission prompts (native app privilege)
+- [x] Grab highlighted text on demand, without the hotkey
+- [x] Optional: copy the readback to the clipboard automatically after a capture
 - [ ] Auto-paste on focus — detects clipboard content and parses immediately
-- [ ] Paste button — reads clipboard directly, no permission prompts (native app privilege)
 - [ ] Optional: clipboard watch mode — auto-parse whenever clipboard changes
 
 ### Context Menu Integration
 
-- [ ] Right-click any highlighted text system-wide → “Read back with AlphabetSoup”
-- [ ] Parsed result opens in app window or a lightweight overlay/toast
-- [ ] Respects user’s saved settings (custom words, verbose toggles, font, colors)
-- [ ] Windows: registered via registry context menu handler
-- [ ] macOS: registered as a Services menu item (system-wide right-click)
-- [ ] Linux: configurable via .desktop file / file manager plugins
+- [x] Parsed result opens in the app window
+- [x] Respects user's saved settings (custom words, verbose toggles, font, colors)
+- [x] Linux: hotkey reads the X11 PRIMARY selection — highlighting alone is enough,
+      no copy required (Wayland needs `wl-clipboard`)
+- [x] Windows: hotkey copies the selection from the focused window and restores the
+      clipboard afterwards
+- [x] `alphabetsoup://readback?text=…` deep link — the scriptable entry point for
+      AutoHotkey, a Linux keybinding, or Automator
+- [ ] macOS: Services menu item — needs a small Automator shim that calls the deep
+      link, since Electron cannot receive `NSService` messages itself
+
+Not achievable, recorded so they stop being re-litigated:
+
+- Windows registry context-menu handler for *text* — shell handlers only attach to
+  files and folders in Explorer, never to selections inside other applications
+- Linux file-manager plugins for *text* — context menus belong to each toolkit;
+  there is no system-wide mechanism
 
 ### File Import
 
 Read a list of strings and parse each one in sequence. Useful when a tech has a batch
 of serial numbers, asset tags, or part numbers to read off.
 
-Supported formats:
+- [x] `.txt` — one string per line
+- [x] `.csv` / `.tsv` — column picker, header row auto-detected with a manual override
+- [x] `.md` — strips markdown formatting, drops headings, keeps fenced-code contents
+- [x] `.json` — array of strings, array of objects, or `{ "items": [...] }`
+- [x] Queue UI — arrow-key stepping, click any entry to jump, copy all readbacks
+- [x] Drag-and-drop, tray "Open list file…", and OS file association
+- [ ] Stretch: `.xlsx` / `.xls` — blocked on a dependency choice. SheetJS's maintained
+      build left npm; the version still published there has known CVEs
 
-- `.txt` — one string per line
-- `.csv` — first column used, header row auto-detected and skipped
-- `.md` — strips markdown formatting, parses remaining text tokens
-- Stretch: `.xlsx` / `.xls` — first column, same logic as CSV
+### Scanning
 
-UI concept: imported list shows as a queue — step through entries one at a time with
-keyboard arrow keys or a Next button. Current item parsed and displayed full-screen
-for easy reading during a call.
+Not on the original roadmap — added because desk techs have the labels in hand.
+
+- [x] Webcam scanning with any connected camera, plus a device picker
+- [x] USB barcode scanners (HID keyboard-wedge) — detected anywhere in the window,
+      no field focus needed
+- [x] Decoding entirely offline via bundled `zxing-wasm`
+- [x] Preview mirror toggle — cosmetic only, never affects decoding
+- [ ] OCR on printed text — same best-effort caveat as the mobile roadmap
+
+### Settings
+
+- [x] Full parity with the web app and extensions — same keys, same defaults
+- [x] Portable `settings.json` import/export, with native file dialogs
+- [x] Desktop-only preferences excluded from exports so they stay browser-importable
+- [x] Versioned migrations for changed defaults
+
+### Distribution
+
+- [x] Windows: NSIS installer + portable exe
+- [x] Linux: AppImage + deb
+- [ ] macOS: dmg + zip — needs a Mac to build and sign
+- [ ] Code signing — Windows Authenticode, macOS notarization
 
 -----
 
@@ -84,8 +132,9 @@ Microsoft Edge Add-ons. Catch-up release to align all three on v1.2.2 still pend
 - Extension and desktop app can coexist — user chooses what fits their environment
 - Extension is the lowest-friction install path for locked-down corporate desktops
   that still allow browser extensions
-- Settings won’t automatically sync between extension and desktop app (different
-  storage contexts) — could be addressed later with an export/import flow
+- Settings still don’t sync *automatically* between extension and desktop app
+  (different storage contexts), but the export/import flow now covers it in both
+  directions — the desktop app reads and writes the same portable `settings.json`
 
 -----
 
@@ -109,6 +158,7 @@ Microsoft Edge Add-ons. Catch-up release to align all three on v1.2.2 still pend
 ## Deferred / Under Consideration
 
 - Team profile export/import — share custom word sets across a team (JSON)
-- Settings sync between desktop app and browser extension
+- Automatic settings sync between desktop app and browser extension — manual
+  export/import already works; this would be the hands-off version
 - PWA manifest — installable from browser without app store
-- Tauri desktop app auto-updater
+- Desktop app auto-updater
