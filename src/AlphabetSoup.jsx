@@ -102,6 +102,188 @@ function useDesktopBrowser() {
   return b;
 }
 
+// ── Desktop app releases ──────────────────────────────────────────────────
+// Asset filenames carry the version, so GitHub's /releases/latest/download/<name>
+// shortcut can't be used. The release API is read once per session and cached,
+// so the download buttons always point at whatever the newest tag ships.
+const DESKTOP_REPO         = "joshhearne/alphabetsoup-desktop";
+const DESKTOP_RELEASES_URL = `https://github.com/${DESKTOP_REPO}/releases/latest`;
+const DESKTOP_README_URL   = `https://github.com/${DESKTOP_REPO}#alphabetsoup-desktop`;
+const DESKTOP_LISTS_URL    = `https://github.com/${DESKTOP_REPO}#list-import`;
+const DESKTOP_API_URL      = `https://api.github.com/repos/${DESKTOP_REPO}/releases/latest`;
+const DESKTOP_CACHE_KEY    = "as_desktop_release";
+const DESKTOP_CACHE_TTL    = 6 * 60 * 60 * 1000;
+
+const OS_LABELS = { windows: "Windows", macos: "macOS", linux: "Linux" };
+
+const DESKTOP_BUILDS = [
+  { key: "win-setup",    os: "windows", label: "Windows installer",     note: "NSIS setup",     match: n => /-setup\.exe$/i.test(n) },
+  { key: "win-portable", os: "windows", label: "Windows portable",      note: "no install",     match: n => /portable\.exe$/i.test(n) },
+  { key: "mac-dmg",      os: "macos",   label: "macOS",                 note: "dmg",            match: n => /\.dmg$/i.test(n) },
+  { key: "mac-zip",      os: "macos",   label: "macOS zip",             note: "zip",            match: n => /mac.*\.zip$/i.test(n) },
+  { key: "linux-app",    os: "linux",   label: "Linux AppImage",        note: "portable",       match: n => /\.AppImage$/i.test(n) },
+  { key: "linux-deb",    os: "linux",   label: "Debian / Ubuntu",       note: "deb",            match: n => /\.deb$/i.test(n) },
+  { key: "linux-rpm",    os: "linux",   label: "Fedora / RHEL / SUSE",  note: "rpm",            match: n => /\.rpm$/i.test(n) },
+];
+
+// A build entry can match several assets in one release (arm64 + x64 dmgs, an
+// arm64 AppImage alongside the x86_64 one). Each match becomes its own button,
+// named by the arch in its filename.
+const ARCH_PATTERNS = [
+  { arch: "universal", match: /universal/i },
+  { arch: "arm64",     match: /(arm64|aarch64)/i },
+  { arch: "x64",       match: /(x64|x86[_-]?64|amd64)/i },
+  { arch: "x86",       match: /(ia32|i386|i686|win32|x86)(?![_-]?64)/i },
+];
+
+const ARCH_LABELS = {
+  macos:   { arm64: "Apple Silicon", x64: "Intel",  x86: "32-bit", universal: "Universal" },
+  windows: { arm64: "ARM64",         x64: "x64",    x86: "32-bit", universal: "Universal" },
+  linux:   { arm64: "ARM64",         x64: "x86_64", x86: "32-bit", universal: "Universal" },
+};
+
+// Where a release ships more than one arch and the visitor's own arch is
+// unknown, lead with the arch most of that platform's machines run.
+const ARCH_PREFERENCE = {
+  macos:   ["arm64", "universal", "x64", "x86"],
+  default: ["x64", "universal", "arm64", "x86"],
+};
+
+function detectAssetArch(name) {
+  return ARCH_PATTERNS.find(a => a.match.test(name))?.arch || null;
+}
+
+function archRank(build, userArch) {
+  if (!build.arch) return 10;                 // no arch in the filename — assume it fits
+  if (userArch) {
+    if (build.arch === userArch)     return 0;
+    if (build.arch === "universal")  return 20;
+    return 40;                                // wrong arch — keep it, but last
+  }
+  const pref = (ARCH_PREFERENCE[build.os] || ARCH_PREFERENCE.default).indexOf(build.arch);
+  return pref === -1 ? 30 : 10 + pref;
+}
+
+// Chromium exposes the real CPU arch; UA strings don't (Chrome on Apple Silicon
+// still says "Intel Mac OS X"), so the sync guess is only a starting point.
+function detectUserArchSync() {
+  if (typeof navigator === "undefined") return null;
+  const ua = navigator.userAgent || "";
+  if (/Mac/i.test(ua) && !/aarch64|arm64/i.test(ua)) return null;
+  if (/aarch64|arm64/i.test(ua))                     return "arm64";
+  if (/x86_64|Win64|WOW64|x64|amd64/i.test(ua))      return "x64";
+  return null;
+}
+
+function useUserArch() {
+  const [arch, setArch] = useState(() => detectUserArchSync());
+  useEffect(() => {
+    const uaData = typeof navigator !== "undefined" ? navigator.userAgentData : null;
+    if (!uaData?.getHighEntropyValues) return undefined;
+    let cancelled = false;
+    uaData.getHighEntropyValues(["architecture", "bitness"])
+      .then(({ architecture, bitness }) => {
+        if (cancelled || !architecture) return;
+        const resolved =
+          architecture === "arm" ? (bitness === "64" ? "arm64" : null) :
+          architecture === "x86" ? (bitness === "64" ? "x64" : "x86") :
+          null;
+        if (resolved) setArch(resolved);
+      })
+      .catch(() => { /* permissions or an older Chromium — keep the UA guess */ });
+    return () => { cancelled = true; };
+  }, []);
+  return arch;
+}
+
+function detectDesktopOS() {
+  if (typeof navigator === "undefined") return null;
+  const ua = navigator.userAgent || "";
+  const uaData = navigator.userAgentData;
+  const isMobile = uaData?.mobile ?? /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+  if (isMobile) return null;
+  const hay = `${uaData?.platform || navigator.platform || ""} ${ua}`;
+  if (/Win/i.test(hay))            return "windows";
+  if (/Mac/i.test(hay))            return "macos";
+  if (/Linux|X11|CrOS/i.test(hay)) return "linux";
+  return null;
+}
+
+function useLatestDesktopRelease() {
+  const [release, setRelease] = useState(() => {
+    try {
+      const raw = localStorage.getItem(DESKTOP_CACHE_KEY);
+      if (!raw) return null;
+      const { at, data } = JSON.parse(raw);
+      return Date.now() - at < DESKTOP_CACHE_TTL ? data : null;
+    } catch { return null; }
+  });
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (release) return undefined;
+    let cancelled = false;
+    fetch(DESKTOP_API_URL, { headers: { Accept: "application/vnd.github+json" } })
+      .then(r => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then(json => {
+        if (cancelled) return;
+        const data = {
+          version:   (json.tag_name || "").replace(/^v/, ""),
+          published: json.published_at,
+          url:       json.html_url || DESKTOP_RELEASES_URL,
+          assets:    (json.assets || []).map(a => ({
+            name: a.name, url: a.browser_download_url, size: a.size,
+          })),
+        };
+        try {
+          localStorage.setItem(DESKTOP_CACHE_KEY, JSON.stringify({ at: Date.now(), data }));
+        } catch { /* private mode / quota — the fetch still worked */ }
+        setRelease(data);
+      })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, [release]);
+
+  return { release, failed };
+}
+
+function desktopBuilds(release, userArch = null) {
+  if (!release) return [];
+  return DESKTOP_BUILDS.flatMap(b => {
+    const matched = release.assets.filter(a => b.match(a.name));
+    return matched.map(asset => {
+      const arch      = detectAssetArch(asset.name);
+      const archLabel = arch ? (ARCH_LABELS[b.os]?.[arch] || arch) : null;
+      // x64 is the assumed default — spell it out only when another arch competes,
+      // or when the visitor is on something else and needs the warning.
+      const showArch  = archLabel
+        && (matched.length > 1 || arch !== "x64" || (userArch && userArch !== arch));
+      return {
+        ...b,
+        key:      `${b.key}-${asset.name}`,
+        label:    showArch ? `${b.label} (${archLabel})` : b.label,
+        arch,
+        fileName: asset.name,
+        href:     asset.url,
+        size:     asset.size,
+      };
+    });
+  });
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return null;
+  return `${Math.round(bytes / 1048576)} MB`;
+}
+
+function formatReleaseDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? null
+    : d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
 function useIsWide(breakpoint = 1024) {
   const [isWide, setIsWide] = useState(() => window.innerWidth >= breakpoint);
   useEffect(() => {
@@ -413,6 +595,9 @@ export default function AlphabetSoup() {
   const systemDark = useSystemDark();
   const isWide     = useIsWide();
   const userBrowser = useDesktopBrowser();
+  const [userOS]    = useState(() => detectDesktopOS());
+  const userArch    = useUserArch();
+  const { release: desktopRelease, failed: desktopFailed } = useLatestDesktopRelease();
 
   const [themePreference, setThemePreference] = usePersisted("as_theme",            "system");
   const [font,            setFont]            = usePersisted("as_font",              FONTS[0].value);
@@ -1201,6 +1386,215 @@ export default function AlphabetSoup() {
           {activeTab === "downloads" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "28px", width: "100%" }}>
 
+              {/* Desktop app hero card */}
+              {(() => {
+                const builds     = desktopBuilds(desktopRelease, userArch);
+                const mine       = (userOS ? builds.filter(b => b.os === userOS) : [])
+                  .sort((a, b) => archRank(a, userArch) - archRank(b, userArch));
+                const others     = builds.filter(b => !mine.includes(b));
+                const featured   = mine.length ? mine : builds;
+                const secondary  = mine.length ? others : [];
+                const version    = desktopRelease?.version;
+                const released   = formatReleaseDate(desktopRelease?.published);
+                const pending    = !desktopRelease && !desktopFailed;
+                const noneForOS  = Boolean(desktopRelease) && userOS && mine.length === 0;
+                // Nothing built for this CPU — still list the builds, but don't
+                // dress a wrong-arch download up as the recommended one.
+                const archMiss   = mine.length > 0 && archRank(mine[0], userArch) >= 40;
+                const archLabel  = userArch ? (ARCH_LABELS[userOS]?.[userArch] || userArch) : null;
+
+                return (
+                  <div style={{
+                    padding: "28px 32px",
+                    background: p.bgSecondary,
+                    border: `1px solid ${activeColors.custom}33`,
+                    borderLeft: `3px solid ${activeColors.custom}`,
+                    borderRadius: "10px",
+                    display: "flex", flexDirection: isWide ? "row" : "column",
+                    alignItems: isWide ? "flex-start" : "flex-start",
+                    gap: "24px",
+                    transition: "background 0.25s",
+                  }}>
+                    <div style={{ fontSize: "48px", lineHeight: 1, flexShrink: 0 }}>🖥️</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        display: "flex", flexWrap: "wrap", alignItems: "center", gap: "10px",
+                        marginBottom: "6px",
+                      }}>
+                        <span className="gradient-text" style={{
+                          fontSize: "18px", fontWeight: "800", letterSpacing: "-0.3px",
+                        }}>
+                          AlphabetSoup desktop app
+                        </span>
+                        <span style={{
+                          fontSize: "10px", fontWeight: "700", letterSpacing: "1px",
+                          textTransform: "uppercase", padding: "3px 8px", borderRadius: "4px",
+                          background: `${activeColors.custom}22`, color: activeColors.custom,
+                          fontFamily: "'IBM Plex Mono', monospace",
+                        }}>
+                          Now available
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "13px", color: p.textMuted, lineHeight: "1.8", marginBottom: "16px" }}>
+                        A native window for Windows and Linux — global hotkey read-back from any app,
+                        the barcode scanner, and the same portable settings file as the web app and
+                        extensions. Runs entirely offline.
+                      </div>
+
+                      <div style={{
+                        marginBottom: "16px", padding: "10px 14px",
+                        background: p.bgTertiary, border: `1px solid ${p.border}`, borderRadius: "6px",
+                        fontSize: "12px", color: p.textMuted, lineHeight: "1.8",
+                        transition: "background 0.25s, border-color 0.25s",
+                      }}>
+                        <span style={{
+                          fontSize: "10px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                          padding: "2px 7px", borderRadius: "4px", marginRight: "8px",
+                          background: `${activeColors.number}22`, color: activeColors.number,
+                          fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap",
+                        }}>
+                          Desktop only, for now
+                        </span>
+                        <span style={{ color: p.text }}>List import</span> — open a .txt, .csv, .md, or .json
+                        file and read the whole list back entry by entry.{" "}
+                        <a
+                          href={DESKTOP_LISTS_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: activeColors.number, textDecoration: "none", whiteSpace: "nowrap" }}
+                          onMouseOver={e => e.currentTarget.style.opacity = "0.75"}
+                          onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                        >
+                          How it works →
+                        </a>
+                      </div>
+
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", alignItems: "center" }}>
+                        {featured.map(({ key, label, note, href, size }, i) => {
+                          const primary = i === 0 && !archMiss;
+                          return (
+                            <a
+                              key={key}
+                              href={href}
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: "8px",
+                                padding: "10px 20px",
+                                background: primary ? activeColors.custom : "transparent",
+                                color: primary ? "#1a1a2e" : activeColors.custom,
+                                border: primary ? "1px solid transparent" : `1px solid ${activeColors.custom}`,
+                                borderRadius: "6px",
+                                fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                                textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
+                                transition: "opacity 0.2s",
+                              }}
+                              onMouseOver={e => e.currentTarget.style.opacity = primary ? "0.85" : "0.75"}
+                              onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                            >
+                              <span>{label}</span>
+                              {size && (
+                                <span style={{ opacity: 0.7, textTransform: "none", letterSpacing: "0.5px" }}>
+                                  {note} · {formatBytes(size)}
+                                </span>
+                              )}
+                              <span style={{ fontSize: "14px" }}>↓</span>
+                            </a>
+                          );
+                        })}
+
+                        {(pending || desktopFailed || noneForOS) && (
+                          <a
+                            href={DESKTOP_RELEASES_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex", alignItems: "center", gap: "8px",
+                              padding: "10px 20px",
+                              background: activeColors.custom, color: "#1a1a2e",
+                              border: "1px solid transparent", borderRadius: "6px",
+                              fontSize: "12px", fontWeight: "700", letterSpacing: "1px", textTransform: "uppercase",
+                              textDecoration: "none", fontFamily: "'IBM Plex Mono', monospace",
+                              transition: "opacity 0.2s",
+                            }}
+                            onMouseOver={e => e.currentTarget.style.opacity = "0.85"}
+                            onMouseOut={e => e.currentTarget.style.opacity = "1"}
+                          >
+                            <span>{pending ? "Loading latest build…" : "Get the latest release"}</span>
+                            <span style={{ fontSize: "14px" }}>→</span>
+                          </a>
+                        )}
+                      </div>
+
+                      {secondary.length > 0 && (
+                        <div style={{
+                          marginTop: "14px", display: "flex", flexWrap: "wrap", gap: "8px 16px",
+                          alignItems: "center", fontSize: "11px", color: p.textFaint,
+                          fontFamily: "'IBM Plex Mono', monospace",
+                        }}>
+                          <span style={{ letterSpacing: "1px", textTransform: "uppercase" }}>
+                            Other platforms
+                          </span>
+                          {secondary.map(({ key, label, href, size }) => (
+                            <a
+                              key={key}
+                              href={href}
+                              style={{ color: p.textMuted, textDecoration: "none", borderBottom: `1px dotted ${p.borderMid}` }}
+                              onMouseOver={e => e.currentTarget.style.color = activeColors.custom}
+                              onMouseOut={e => e.currentTarget.style.color = p.textMuted}
+                            >
+                              {label}{size ? ` (${formatBytes(size)})` : ""}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+
+                      <div style={{
+                        marginTop: "14px", fontSize: "11px", color: p.textFaint,
+                        fontFamily: "'IBM Plex Mono', monospace", lineHeight: "1.9",
+                      }}>
+                        {version
+                          ? <>Latest release: v{version}{released ? ` · ${released}` : ""} — downloads always track the newest tag.</>
+                          : pending
+                            ? <>Checking GitHub for the newest release…</>
+                            : <>Couldn’t reach GitHub for version info — the button goes to the latest release page.</>}
+                        {noneForOS && (
+                          <>
+                            <br />
+                            No {OS_LABELS[userOS] || "matching"} build in this release yet — Windows and Linux are live,
+                            macOS is still in progress.
+                          </>
+                        )}
+                        {archMiss && (
+                          <>
+                            <br />
+                            No {archLabel} {OS_LABELS[userOS] || ""} build in this release — the builds above are for a
+                            different CPU architecture.
+                          </>
+                        )}
+                        <br />
+                        {[
+                          { href: DESKTOP_RELEASES_URL, label: "All builds & release notes" },
+                          { href: DESKTOP_README_URL,   label: "Docs & feature list" },
+                        ].map(({ href, label }, i) => (
+                          <span key={href}>
+                            {i > 0 && <span style={{ margin: "0 10px", color: p.textGhost }}>·</span>}
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: p.textMuted, textDecoration: "none", borderBottom: `1px dotted ${p.borderMid}` }}
+                              onMouseOver={e => e.currentTarget.style.color = activeColors.custom}
+                              onMouseOut={e => e.currentTarget.style.color = p.textMuted}
+                            >
+                              {label} →
+                            </a>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Browser Extension hero card */}
               <div style={{
                 padding: "28px 32px",
@@ -1271,7 +1665,7 @@ export default function AlphabetSoup() {
               {/* How it works */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ fontSize: "11px", letterSpacing: "2px", color: p.textMuted, textTransform: "uppercase" }}>
-                  How it works
+                  How the extension works
                 </div>
                 <div className="two-col">
                   {[
@@ -1320,8 +1714,8 @@ export default function AlphabetSoup() {
                     the Colors &amp; Fonts tab here on the web app, and import them directly into the
                     extension — or vice versa. No account required.
                     <br /><br />
-                    Full export/import support is live across the web app and the Chrome, Firefox,
-                    and Microsoft Edge extensions.
+                    Full export/import support is live across the web app, the desktop app, and the
+                    Chrome, Firefox, and Microsoft Edge extensions.
                   </div>
                 </div>
               </div>
